@@ -1,0 +1,40 @@
+import requests,re,csv
+'''
+该程序用于采集阿里巴巴产品url，通过输入产品列表url、url动态参数及保存位置，即可快速采集阿里巴巴相关分类产品的url。
+'''
+'''采集函数开始'''
+def urlpro(url,a,):
+    target =url+a
+    req = requests.get(url=target) #抓取到的内容
+    html=req.text #转化为字符串类型
+    mopro=re.compile('\/\/www\.alibaba\.com\/product-detail\/.*?[0-9]{*}?\.html')
+    proURL=mopro.findall(html)
+    proURL=list(proURL)
+    proURL=set(proURL)
+    proURL=list(proURL)
+    
+    for i in proURL:
+        i=re.sub('//','https://',i)
+        i=[i] #把字符串变成列表，然后用writer()方法存入csv表格
+        csvFile=open(c,'a')
+        writer=csv.writer(csvFile)
+        writer.writerow(i)
+        csvFile.close()
+'''采集函数结束'''
+a=0
+b=1
+print('输入要采集的网址(https://www.alibaba.com/products/custom_hat.html?spm=a2700.galleryofferlist.0.0.2ea9208dkdN6Um&IndexArea=product_en&page=3,不要后面的3)：')
+url=str(input())
+print('输入要采集的页数(比如：3)：')
+a=int(input())
+print('要保存的位置(例：/Users/gaotiansong/Desktop/custom_shirt/custom_shirt.csv):')
+c=str(input())
+
+for i in range(a+1):
+    n=str(i+1)
+    urlpro(url,n)
+    print('采集完',b,'页')
+    b=b+1
+    if b == a+1:
+        print('采集完毕，一共采集了',b-1,'页')
+        break
