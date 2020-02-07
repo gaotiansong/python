@@ -1,40 +1,45 @@
-import requests,re,csv
-'''
-该程序用于采集阿里巴巴产品url，通过输入产品列表url、url动态参数及保存位置，即可快速采集阿里巴巴相关分类产品的url。
-'''
-'''采集函数开始'''
-def urlpro(url,a,):
-    target =url+a
-    req = requests.get(url=target) #抓取到的内容
-    html=req.text #转化为字符串类型
-    mopro=re.compile('\/\/www\.alibaba\.com\/product-detail\/.*?[0-9]{*}?\.html')
-    proURL=mopro.findall(html)
-    proURL=list(proURL)
-    proURL=set(proURL)
-    proURL=list(proURL)
+from selenium import webdriver
+import time,bs4,os,csv
+from selenium.webdriver.chrome.options import Options
+def pro_urls(n):
+    opt = webdriver.ChromeOptions()
+    opt.add_argument("--headless") #设置无界面模式
+    opt.add_argument("--disable-gpu")
+    driver = webdriver.Chrome(executable_path='C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe',options=opt) #驱动器路径
+    url = "https://www.alibaba.com/products/Basketball_Jersey.html?spm=a2700.galleryofferlist.0.0.3d492c63yoMZNz&IndexArea=product_en&page="+str(n)
+    driver.get(url)
+    time.sleep(3)
+    a=0
+    while a<5:
+        #下拉鼠标
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight); var lenOfPage=document.body.scrollHeight; return lenOfPage;")
+        time.sleep(1)
+        a=a+1
+    html=driver.page_source
+    bs=bs4.BeautifulSoup(html,'html.parser')
+    prourls=bs.select('.organic-gallery-title')
+    i=0
+    for prourl in prourls:
+        #print('https:'+prourl.get('href'))
+        file=['https:'+prourl.get('href')]
+        #调用方法把内容写入csv文件
+        writer_pro('你的文件路径\url.csv',file)
+    driver.quit()
     
-    for i in proURL:
-        i=re.sub('//','https://',i)
-        i=[i] #把字符串变成列表，然后用writer()方法存入csv表格
-        csvFile=open(c,'a')
-        writer=csv.writer(csvFile)
-        writer.writerow(i)
-        csvFile.close()
-'''采集函数结束'''
-a=0
-b=1
-print('输入要采集的网址(https://www.alibaba.com/products/custom_hat.html?spm=a2700.galleryofferlist.0.0.2ea9208dkdN6Um&IndexArea=product_en&page=3,不要后面的3)：')
-url=str(input())
-print('输入要采集的页数(比如：3)：')
-a=int(input())
-print('要保存的位置(例：/Users/gaotiansong/Desktop/custom_shirt/custom_shirt.csv):')
-c=str(input())
-
-for i in range(a+1):
-    n=str(i+1)
-    urlpro(url,n)
-    print('采集完',b,'页')
-    b=b+1
-    if b == a+1:
-        print('采集完毕，一共采集了',b-1,'页')
-        break
+#把内容写入csv文件的方法
+def writer_pro(site,file):
+    headfile=['url']
+    csvf=open(site,'a',newline='')#newline=''去除空格
+    size=os.path.getsize(site)
+    writer=csv.writer(csvf)
+    if size==0:
+        writer.writerow(headfile)
+        writer.writerow(file)
+        csvf.close()
+    else:
+        writer.writerow(file)
+        csvf.close()
+n=1
+while n<=100:
+    pro_urls(n)
+    print('采集完',n,'页')
