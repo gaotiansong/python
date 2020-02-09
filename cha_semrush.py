@@ -2,42 +2,43 @@ from selenium import webdriver
 import datetime
 import time,bs4
 
-def login(doname,driver):
-    url='https://zh.semrush.com/analytics/organic/positions/?searchType=domain&q='+doname+'&date=20200206'
+def login(doname,db,driver,n):
+    url='https://zh.semrush.com/analytics/organic/overview/?db='+db+'&searchType=domain&q='+doname
     driver.get(url)
-    time.sleep(30)
+    if n==0:
+        time.sleep(15)
+    else:
+        time.sleep(0)
+    driver.implicitly_wait(30)
+    time.sleep(5)
     html=driver.page_source
     bs=bs4.BeautifulSoup(html,'html.parser') 
     #driver.close()
     num=bs.select('div .cl-summary__value span')
     try:
         num=num[0].getText()
+        num=','+db+','+num
     except:
-        try:
-            nums=bs.select('div .cl-nothing-found__other-databases__database span')
-            s=''
-            for num in nums:
-                s1=num.getText()
-                s=s+s1
-            if s=='':
-                s='其它数据库也没有'
-            else:
-                s=s
-            num='0,'+s
-        except:
-            num='0,找不到相关数据'
-            print(num)
+        num=','+db+','+'0'
+    return num
 
-    with open('/Users/gaotiansong/Desktop/域名列表/donames_jieguo.txt','a') as f:
-        f.write(doname+','+num+'\n')
-        f.close()
-
-#doname='customadd.com'
-driver=webdriver.Chrome(executable_path='/Users/gaotiansong/Downloads/chromedriver')
-doname_path='/Users/gaotiansong/Desktop/域名列表/donames.txt'
+driver=webdriver.Chrome(executable_path=r'/Users/gaotiansong/Downloads/chromedriver')
+doname_path=r'/Users/gaotiansong/Desktop/域名列表/shopify.txt'
 with open(doname_path, 'r', encoding='utf-8') as f:
+    global n
+    n=0
     for line in f:
+        nums=''
         doname=line[:-1] #去掉换行符
-        login(doname,driver)
+        for db in ['us','ca','au','uk']:
+            num=login(doname,db,driver,n)
+            n=1
+            nums=nums+num
+        shuju=nums
+        
+        with open(r'/Users/gaotiansong/Desktop/域名列表/shopify_jieguo.txt','a') as f:
+            f.write(doname+','+shuju+'\n')
+            f.close()
+        print(shuju)
     print('查询完毕，关闭所有窗口')  
     driver.quit()
