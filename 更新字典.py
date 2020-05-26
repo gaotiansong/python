@@ -1,32 +1,28 @@
-from random import randint
-'''
-把d2合并到d1中，如果存在相同的键，则保存该键，值相加；如果d1中不存在该键，则直接把该键-值放入到d1的对应位置。
-'''
+# coding=utf-8
 
-d1={'a':{'a1':1,'a2':2},'b':{'b1':1,'b2':1},'c':{'c1':1,'c2':1},'e':{'e1':1}}
+d1={'a':{'a1':1,'a2':2},'b':{'b1':1,'b2':1},'c':{'c1':1,'c2':1},'e':{'e1':1},'f':{'f1':2,'f2':5,'f3':7},'g':{'g1':2}}
 
-d2={'a':{'a1':100,'a2':2,'a3':4},'d':{'d1':1,'d2':2},'c':{'c2':1,'c3':2},'e':{'e1':1}}
+d2={'a':{'a1':100,'a2':2,'a3':4},'d':{'d1':1,'d2':2},'c':{'c2':1,'c3':2},'e':{'e1':1},'f':{'f1':2,'f2':1},'g':{'g1':2}}
 
-#结果
-#d1={'a':{'a1':101,'a2':4,'a3':4},'b':{'b1':1,'b2':1},c:{'c1':1,'c2':2,'c3':2},'d':{'d1':1,'d2':2},'e':{'e1':2}}
-
-
-c={}
-for i1 in d1.keys():
-    for i2 in d2.keys():
-        #如果这两个字典的键相同,则对比子字典中的项目
-        if i1==i2:
-            for k22 in d2[i2].keys():
-                for k11 in d1[i1].keys():
-                    #如果两个子字典的键相同，则值相加
-                    if k11==k22:
-                        d1[i1][k11]=d1[i1][k11]+d2[i2][k22]
-                    elif k22 not in d1[i1]:
-                        print(d1[i1],k22,d2[i2][])
-                print('-----')
-        elif i2 not in d1:
-            c[i2]=d2[i2]
+def merge(d1, d2):
+    c = {}
+    for k, v in d1.items():
+        d3 = d1[k]
+        if k in d2:
+            #合并
+            d4 = d2[k]
+            if isinstance(d3, dict) and isinstance(d4, dict):
+                c[k] = merge(d3, d4)
+            else:
+                c[k] = d1[k] + d2[k]
         else:
-            pass
-d1.update(c)
-print(d1)
+            c[k] = d1[k]
+
+    for k, v in d2.items():
+        d3 = d2[k]
+        if not k in d1:
+            c[k] = d3
+    return c
+
+m = merge(d1, d2)
+print ('m = ', m)
