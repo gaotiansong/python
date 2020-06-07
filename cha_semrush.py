@@ -1,3 +1,4 @@
+#-*-coding:utf-8 -*-
 from selenium import webdriver
 import datetime
 import time,bs4
@@ -22,8 +23,33 @@ def login(doname,db,driver,n):
         num=','+db+','+'0'
     return num
 
-driver=webdriver.Chrome(executable_path=r'/Users/gaotiansong/Downloads/chromedriver')
-doname_path=r'/Users/gaotiansong/Desktop/域名列表/shopify.txt'
+def find_key(doname):
+    url='https://zh.semrush.com/analytics/organic/positions/?searchType=domain&q='+doname
+    driver.get(url)
+    time.sleep(5)
+    driver.implicitly_wait(30)
+    time.sleep(5)
+    html=driver.page_source
+    bs=bs4.BeautifulSoup(html,'html.parser') 
+    keyls=bs.select('span.cl-display-keyword')
+    try:
+        sl=[]
+        for key in keyls:
+            key=key.getText()
+            sl.append(key)
+        s='|'.join(sl)
+    except:
+        s='查询出错'
+    return s
+
+#driver=webdriver.Chrome(executable_path=r'/Users/gaotiansong/Downloads/chromedriver')
+driver=webdriver.Chrome(executable_path=r'C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe')
+#设置域名列表
+doname_path=r'D:/Backup/桌面/seoshuju/alldoname.txt'
+
+#设置结果保存位置
+jieguo_path=r'D:/Backup/桌面/seoshuju/jieguo_alldoname0531.txt'
+
 with open(doname_path, 'r', encoding='utf-8') as f:
     global n
     n=0
@@ -36,9 +62,14 @@ with open(doname_path, 'r', encoding='utf-8') as f:
             nums=nums+num
         shuju=nums
         
-        with open(r'/Users/gaotiansong/Desktop/域名列表/shopify_jieguo.txt','a') as f:
-            f.write(doname+','+shuju+'\n')
-            f.close()
-        print(shuju)
+        keys=find_key(doname)
+
+        with open(jieguo_path,'a') as f:
+            try:
+                f.write(doname+','+keys+','+shuju+'\n')
+                f.close()
+            except:
+                print('跳过')
+        print(doname,':',shuju)
     print('查询完毕，关闭所有窗口')  
     driver.quit()
