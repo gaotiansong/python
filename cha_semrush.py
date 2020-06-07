@@ -23,6 +23,20 @@ def login(doname,db,driver,n):
         num=','+db+','+'0'
     return num
 
+def find_f(doname,db,driver):
+    url='https://zh.semrush.com/analytics/overview/?q=nbamr.com&db='+db+'&searchType='+doname
+    driver.get(url)
+    driver.implicitly_wait(30)
+    html=driver.page_source
+    bs=bs4.BeautifulSoup(html,'html.parser') 
+    flow=bs.select('span._link__text_1yhuh_44')
+    try:
+        flow=flow[1].getText()
+    except Exception as e:
+        print(e)
+        flow=0
+    return flow
+
 def find_key(doname):
     url='https://zh.semrush.com/analytics/organic/positions/?searchType=domain&q='+doname
     driver.get(url)
@@ -57,10 +71,12 @@ with open(doname_path, 'r', encoding='utf-8') as f:
         nums=''
         doname=line[:-1] #去掉换行符
         for db in ['us','ca','au','uk']:
+            if db=='us':
+                flow=find_f(doname,db,driver)
             num=login(doname,db,driver,n)
             n=1
             nums=nums+num
-        shuju=nums
+        shuju=nums+','+flow
         
         keys=find_key(doname)
 
