@@ -1,4 +1,5 @@
 from random import randint
+from shutil import copyfile
 import csv,time
 def wordListSum(wordList):
     sum=0
@@ -57,40 +58,76 @@ def merge(d1, d2):
             c[k] = d3
     return c
 
-def wt_db(text):
-    #训练素材 
-    #text=open(r'D:\Backup\桌面\python文本处理\inaugurationSpeech.txt',encoding='utf-8').read()
+#反转字符串
+def s_ab(s):
+    s1=s[::-1]
+    return s1
 
+def cp_new(f):
+    import os.path
+    if os.path.isfile(f):
+        copyfile(f,f+r'.new')
+        return f+r'.new'
+    else:
+        with open(f+r'.new','w'):
+            return f+r'.new'
+
+def wt_db(text,db_path):
+    import os.path
     #生成结果字典
     newDict=buildWordDict(text)
-
+    d=db_path
     #打开已有模型,如果模型不存在，则新建一个空字典
-    try:
-        d=r'D:\Backup\桌面\python文本处理\db.txt'
-        with open(d,'r') as f:
+    if os.path.isfile(d):
+        with open(d,'r',encoding='utf8') as f:
             s=f.read()
-            oldDict=eval(s)
-    except Exception as e:
-        print(e)
+            try:
+                oldDict=eval(s)
+            except Exception as e:
+                print(e)
+                oldDict={}
+    else:
+        print('新建字典模型')
         oldDict={}
-
+        
     #计算出新模型
     wordDict=merge(oldDict,newDict)
 
-
     #保存新模型
-    d=r'D:\Backup\桌面\python文本处理\db.txt'
+    #尝试保存
+    test_path=cp_new(db_path)
+    with open(test_path,'w',encoding='utf-8',errors='ignore') as f:
+        f.write(str(wordDict))
+
+    #正式保存
+    d=db_path
     with open(d,'w',encoding='utf-8',errors='ignore') as f:
         f.write(str(wordDict))
 
+#采集古腾堡
+def find_txt(url):
+    import requests,re
+    req=requests.get(url)
+    txt=req.text
+    n1=txt.index("THE ENCOUNTER")
+    n2=txt.index('*** START: FULL LICENSE ***')
+    txt=txt[n1:n2]
+    txt=re.sub(r'"|\/.\/','',txt)
+    txt=re.sub('\r',' ',txt)
+    return txt
 
-with open(r'D:\Backup\桌面\python文本处理\帽子语料\Baseball cap.csv','r',encoding='utf-8',errors='ignore') as f:
-    readCsv=csv.reader(f)
-    n=0
-    for i in readCsv:
-        n+=1
-        if i[0]=='Name':
-            continue
-        s=i[0]+' '+i[2]
-        wt_db(s)
-        print(n,'条')
+dbA=r'D:\Backup\桌面\python文本处理\dbxs-a.txt'
+dbB=r'D:\Backup\桌面\python文本处理\dbxs-b.txt'
+
+while True:
+    s=str(input('请输入:'))
+    try:
+        test_pathA=cp_new(dbA)
+        wt_db(s,dbA)
+        
+        test_pathB=cp_new(dbB)
+        wt_db(s_ab(s),dbB)
+        print('完成')
+    except Exception as e:
+        print('跳出',e)
+        continue
