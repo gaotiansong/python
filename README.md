@@ -24,3 +24,8 @@ site_doname.py
 keyword.py
 -----------
 提取文本关键字，并按照出现频率排序
+
+
+if (!-e $request_filename) {
+        rewrite  ^/(.*)$ /index.php?r=$1 last;
+}
