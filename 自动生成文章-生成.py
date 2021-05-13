@@ -217,7 +217,7 @@ def wt_wordpress(name,des):
     post.title = name
     post.content = des
     post.post_status = 'publish' #文章状态，不写默认是草稿，private表示私密的，draft表示草稿，publish表示发布
-    wp = Client('https://customp.cn/xmlrpc.php', 'customp', 'PYOqDvyjw2F6vQGir%pnd1PQ') 
+    wp = Client('https://customp.cn/xmlrpc.php', 'customp', '%pnd1PQ') 
     '''
     post.terms_names = { 
         'post_tag':seokey(key_tag,30,3), #文章所属标签，没有则自动创建
