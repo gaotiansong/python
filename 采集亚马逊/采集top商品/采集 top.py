@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*- 
+'''
+如果觉得可以用，请点赞。
+'''
 import logging
 import requests
 import time
