@@ -1,4 +1,8 @@
 #-*-coding:utf-8 -*-
+'''
+2021 09 14日更新
+
+'''
 #from _typeshed import IdentityFunction
 from os import path, write
 from typing import Text
@@ -247,9 +251,10 @@ def find_asins(html1,html2):
     asins=list(set(asins))
     return asins
 
+#获取变量名
 def find_colour(html1,html2):
     html1=html1
-    #获取颜色
+    #获取颜色变量
     colours=html2.xpath("//*[@id='variation_color_name']/div/span/text()")
     colour=""
     try:
@@ -260,7 +265,7 @@ def find_colour(html1,html2):
 
 def find_style(html1,html2):
     html1=html1
-    #获取样式
+    #获取样式变量
     styles=html2.xpath("//*[@id='variation_style_name']/div/span/text()")
     style=""
     try:
@@ -268,6 +273,17 @@ def find_style(html1,html2):
     except Exception as e:
         print(e)
     return style
+
+def find_count(html1,html2):
+    html1=html1
+    #获取每包数量变量
+    counts=html2.xpath("//*[@id='variation_configuration']/div/span/text()")
+    count=""
+    try:
+        count=counts[0]
+    except Exception as e:
+        print(e)
+    return count
 
 def find_var_size(html1,html2):
     html1=html1
@@ -279,6 +295,7 @@ def find_var_size(html1,html2):
     except Exception as e:
         print(e)
     return size
+
 
 def find_size(html1,html2):
     html1=html1
