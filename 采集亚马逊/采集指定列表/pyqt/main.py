@@ -7,6 +7,7 @@ from PyQt6.QtGui import QTextCursor
 import sys,os
 from set import cread_ini,read_ini
 from one_caiji import *
+import re
 
 class Ui_Form(object):
     def __init__(self):
@@ -59,7 +60,7 @@ class Ui_Form(object):
 
         self.label1=QtWidgets.QLabel(Form)
         self.label1.setGeometry(QtCore.QRect(50, 300, 371, 50))
-        self.label1.setText("采集中......")
+        self.label1.setText("当前状态")
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -103,7 +104,7 @@ class Ui_Form(object):
             self.lineEdit_asin.setText(download_path[0])
         if r"toolButton_procsv" == sender.objectName():
             download_path = QFileDialog.getExistingDirectory(None, "选择存储文件",os.getcwd())
-            self.lineEdit_procsv.setText(download_path+self.lineEdit_driver.text())
+            self.lineEdit_procsv.setText(download_path+download_path[0]+"new.csv")
         if r"pushButton_save" == sender.objectName():
             data=[]
             data.append(self.lineEdit_driver.text())
@@ -136,14 +137,16 @@ class Ui_Form(object):
         self.th.start()
     
     def change_label(self,msg):
-        nowtime=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-        self.label1.setText(str(nowtime)+"  正在采集:"+msg)
-        print("msg:",msg)
         if msg=="End":
-            self.th.terminate()
+            #self.th.terminate()
             del self.th
             print("恢复按钮")
             self.pushButton_start.setEnabled(True)
+            self.label1.setText("采集完毕")
+            self.pushButton_start.setText("开始采集")
+        else:
+            nowtime=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+            self.label1.setText(str(nowtime)+"  正在采集:"+msg)
 
 class MyThread(QThread):
     signalForText = pyqtSignal(str) #定义一个参数是str的信号 
