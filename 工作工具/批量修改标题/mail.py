@@ -1,6 +1,8 @@
 #coding=utf-8
 import csv
+from os import rmdir
 from random import sample
+import re
 pro_tath=input("输入你要处理的文件:")
 pro_tath=pro_tath.strip()
 key_path=r"./keyword/keyword.csv"
@@ -8,13 +10,6 @@ add1_path=r"./keyword/add1.csv"
 add2_path=r"./keyword/add2.csv"
 zt_path=r"./keyword/zt.csv"
 ch_path=r"./keyword/ch.csv"
-'''
-key_path=r"/Users/gaotiansong/Desktop/keyword/keyword.csv"
-add1_path=r"/Users/gaotiansong/Desktop/keyword/add1.csv"
-add2_path=r"/Users/gaotiansong/Desktop/keyword/add2.csv"
-zt_path=r"/Users/gaotiansong/Desktop/keyword/zt.csv"
-ch_path=r"/Users/gaotiansong/Desktop/keyword/ch.csv"
-'''
 
 with open(key_path,"r") as key,open(add1_path,"r") as f1,open(add2_path,"r")as f2,open(zt_path,"r")as zt,open(ch_path,"r")as ch,open(pro_tath,"r") as pro:
     pros=csv.reader(pro)
@@ -25,6 +20,7 @@ with open(key_path,"r") as key,open(add1_path,"r") as f1,open(add2_path,"r")as f
     for i1 in add1s:
         lsadd1.append(i1)
     add1=sample(lsadd1,1)[0]
+    print(add1)
 
     #随机获取附加词2
     lsadd2=[]
@@ -60,7 +56,7 @@ with open(key_path,"r") as key,open(add1_path,"r") as f1,open(add2_path,"r")as f
             ls1=ls
             s1=" ".join(ls1)
             ls.append(sample(keywords,1)[0])
-            lss=[p[1]]+["Ornaments"]+ls+add1+add2+zt1+["For"]+ch1
+            lss=[p[1]]+["Christmas ornaments"]+ls+add1+add2+zt1+["For"]+ch1
             s=" ".join(lss)
             ns=[80,120,140,160,180]
             if len(s)>sample(ns,1)[0] and len(s)<200:
@@ -76,6 +72,8 @@ with open(key_path,"r") as key,open(add1_path,"r") as f1,open(add2_path,"r")as f
         print(len(title),title.title())
         newpro_path=pro_tath.split(r".")
         newpro_path=newpro_path[0]+r"New.csv"
+        h1=title.title().strip()
+        h1=re.sub("(\s)+"," ",h1)
         with open(newpro_path,"a",newline="") as w:
             writer=csv.writer(w)
-            writer.writerow([p[0],p[1],title.title()])
+            writer.writerow([p[0],p[1],h1])
