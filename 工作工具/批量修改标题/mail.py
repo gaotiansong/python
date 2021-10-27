@@ -51,7 +51,7 @@ with open(key_path,"r") as key,open(add1_path,"r") as f1,open(add2_path,"r")as f
         keywords.append(i[0])
 
     for p in pros:
-        if p[0]=="sku":
+        if p[0]=="Seller SKU" or p[0]=="item_sku":
             continue
         print("p1",p[1])
         ls=[]
@@ -76,6 +76,6 @@ with open(key_path,"r") as key,open(add1_path,"r") as f1,open(add2_path,"r")as f
         print(len(title),title.title())
         newpro_path=pro_tath.split(r".")
         newpro_path=newpro_path[0]+r"New.csv"
-        with open(newpro_path,"a") as w:
+        with open(newpro_path,"a",newline="") as w:
             writer=csv.writer(w)
             writer.writerow([p[0],p[1],title.title()])
