@@ -76,12 +76,16 @@ with open(key_path,"r") as key,open(add1_path,"r") as f1,open(add2_path,"r")as f
         h1=re.sub("(\s)+"," ",h1)
 
         while True:
+
             lstags=[]
             lstag=sample(keywords,2)
+            lstags1=lstags
             lstags=lstags+lstag
             keys=",".join(list(set(lstags)))
-            if len(keys)>200:
+            if len(keys)>200 and len(keys)<250:
                 break
+            elif len(keys)>250:
+                keys=",".join(lstags1)
 
         with open(newpro_path,"a",newline="") as w:
             writer=csv.writer(w)
