@@ -77,7 +77,7 @@ with open(key_path,"r") as key,open(add1_path,"r") as f1,open(add2_path,"r")as f
 
         while True:
             lstags=[]
-            lstag=sample(keywords,5)
+            lstag=sample(keywords,2)
             lstags=lstags+lstag
             keys=",".join(list(set(lstags)))
             if len(keys)>200:
