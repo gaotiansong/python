@@ -74,6 +74,15 @@ with open(key_path,"r") as key,open(add1_path,"r") as f1,open(add2_path,"r")as f
         newpro_path=newpro_path[0]+r"New.csv"
         h1=title.title().strip()
         h1=re.sub("(\s)+"," ",h1)
+
+        while True:
+            lstags=[]
+            lstag=sample(keywords,5)
+            lstags=lstags+lstag
+            keys=",".join(list(set(lstags)))
+            if len(keys)>200:
+                break
+
         with open(newpro_path,"a",newline="") as w:
             writer=csv.writer(w)
-            writer.writerow([p[0],p[1],h1])
+            writer.writerow([p[0],p[1],h1,keys])
