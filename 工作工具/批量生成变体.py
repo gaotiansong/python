@@ -1,12 +1,20 @@
 #coding=utf-8
 import csv
+from multiprocessing import Queue
+
+def wt_q(q,ena_path):
+    #给对列写入ean
+    with open(ena_path,"r") as f:
+        rows=f.readlines()
+        for row in rows:
+            q.put(str(row.strip()))
 
 def Wt_csv(path,f):
-    with open(path,"a") as w:
+    with open(path,"a",newline="") as w:
         writer=csv.writer(w)
         writer.writerow(f)
 
-def pro_uk(old_path,mvar,m1var):
+def pro_uk(old_path,mvar,m1var,q):
     new_path=old_path.split(r".")
     new_path=new_path[0]+r"New.csv"
     with open(old_path,"r") as f:
@@ -31,13 +39,13 @@ def pro_uk(old_path,mvar,m1var):
                 if n==mvar:
                     for i in range(m1var):
                         row[1]=row[1]+"01"
-                        row[4]="需要EAN"
+                        row[4]=str(q.get()) #写入ean
                         row[12]="组合价格"
                         Wt_csv(new_path,row)
                     n=0
                     parent_sku=""
 
-def pro_us(old_path,mvar,m1var):
+def pro_us(old_path,mvar,m1var,q):
     new_path=old_path.split(r".")
     new_path=new_path[0]+r"New.csv"
     with open(old_path,"r") as f:
@@ -60,7 +68,7 @@ def pro_us(old_path,mvar,m1var):
                 if n==mvar:
                     for i in range(m1var):
                         row[1]=row[1]+"01"
-                        row[5]="需要EAN"
+                        row[5]=str(q.get()) #写入ean
                         row[10]="组合价格"
                         Wt_csv(new_path,row)
                     n=0
@@ -69,6 +77,13 @@ def pro_us(old_path,mvar,m1var):
 old_path=input("输入要处理的文件:")
 old_path=old_path.strip()
 old_path=old_path.replace(r'"','')
+
+q=Queue(1000)
+#ena_path=r"/Users/gaotiansong/Desktop/变体处理/ean.csv"
+ena_path=input("输入ean文件:")
+ena_path=ena_path.strip()
+ena_path=ena_path.replace(r'"','')
+wt_q(q,ena_path)
 
 mvar=input("变体个数:")
 mvar=int(mvar)
@@ -85,7 +100,7 @@ with open(old_path,"r") as f:
         n=n+1
 if cou=="stringlight":
     print("英国")
-    pro_uk(old_path,mvar,m1var)
+    pro_uk(old_path,mvar,m1var,q)
 elif cou=="hangingornament":
     print("美国")
-    pro_us(old_path,mvar,m1var)
+    pro_us(old_path,mvar,m1var,q)
