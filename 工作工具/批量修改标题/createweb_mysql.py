@@ -6,9 +6,9 @@ from random import sample
 
 def find_cursor():
     # 打开数据库连接
-    db = pymysql.connect(host='45.77.109.51',
-                        user='keyword',
-                        password='123147@Gts',
+    db = pymysql.connect(host='',
+                        user='',
+                        password='',
                         database='keyword')
 
     # 使用 cursor() 方法创建一个游标对象 cursor
