@@ -37,7 +37,12 @@ def pro_uk(old_path,mvar,m1var,asins):
                 if n==mvar:
                     for i in range(m1var):
                         row[1]=row[1]+"01"
-                        row[4]=asins.pop()
+                        try:
+                            row[4]=asins.pop()
+                        except Exception as e:
+                            print(e)
+                            row[4]="需要EAN"
+
                         row[12]="组合价格"
                         Wt_csv(new_path,row)
                     n=0
@@ -66,7 +71,11 @@ def pro_us(old_path,mvar,m1var,asins):
                 if n==mvar:
                     for i in range(m1var):
                         row[1]=row[1]+"01"
-                        row[5]=asins.pop()
+                        try:
+                            row[5]=asins.pop()
+                        except Exception as e:
+                            print(e)
+                            row[5]="需要EAN"
                         row[10]="组合价格"
                         Wt_csv(new_path,row)
                     n=0
@@ -107,7 +116,8 @@ if __name__=="__main__":
     for i in asins:
         asin_new.append([i])
     new_ean=ena_path.split(r".")
-    new_ean=new_ean[0]+r"剩余.txt"
+    new_ean=new_ean[0]+r"剩余{}.txt".format(len(asin_new))
     with open(new_ean,"w",encoding="utf-8",newline="") as f:
         writer=csv.writer(f)
         writer.writerows(asin_new)
+    input("按任意键退出")
