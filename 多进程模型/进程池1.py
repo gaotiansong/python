@@ -1,17 +1,29 @@
-from multiprocessing import Pool
+#conding="utf-8"
 import time
-import os
+from multiprocessing import Pool
+import queue
 import random
-def action(name):
-    n=random.randint(1,5)
-    print(name,' --当前进程：',os.getpid(),"等待",n)
+import os
+
+def f(x):
+    print("当前进程--",os.getpid())
+    print('执行{x}'.format(x=x))
+    n = random.randint(5, 10)
     time.sleep(n)
-    print("结束",n)
+    print(x + x)
+    print("\n\n")
+    
+
+
 if __name__ == '__main__':
-    #创建包含 4 条进程的进程池
-    pool = Pool(processes=5)
-    # 将action分3次提交给进程池
-    for i in range(30):
-        pool.apply_async(action, args=(i, ))
+    q = queue.Queue()
+    for i in range(100000):
+        q.put(i)
+    #创建容量为100的进程池 
+    pool=Pool(processes=100)
+    while q.empty()!=True:
+        pool.apply_async(f,args=(q.get(),))
     pool.close()
     pool.join()
+
+    print("执行完毕")
