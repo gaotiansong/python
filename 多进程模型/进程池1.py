@@ -22,6 +22,7 @@ if __name__ == '__main__':
     #创建容量为100的进程池 
     pool=Pool(processes=100)
     while q.empty()!=True:
+        #只要队列不空 一直提交进程执行
         pool.apply_async(f,args=(q.get(),))
     pool.close()
     pool.join()
