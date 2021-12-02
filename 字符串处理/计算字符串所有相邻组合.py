@@ -3,7 +3,6 @@
 
 def find_words(s):
     import re
-    #计算一段文字所有相邻组合
     words=[]
     s=re.sub("\s+"," ",s)
     s_ls=s.split(" ")
