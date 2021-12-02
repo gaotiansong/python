@@ -1,5 +1,5 @@
-#给它字符串 "gao tian song"
-#输出 ["gao","tian","song","gao tian","tian song","gao tian song"]
+#给它字符串 "zhe xue jia"
+#输出 ["zhe","xue","jia","zhe xue","xue jia","zhe xue jia"]
 
 def find_words(s):
     import re
