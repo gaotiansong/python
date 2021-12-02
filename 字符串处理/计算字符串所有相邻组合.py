@@ -2,6 +2,7 @@
 #输出 ["gao","tian","song","gao tian","tian song","gao tian song"]
 
 def find_words(s):
+    import re
     #计算一段文字所有相邻组合
     words=[]
     s=re.sub("\s+"," ",s)
