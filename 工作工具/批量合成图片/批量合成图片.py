@@ -2,18 +2,17 @@ from PIL import Image
 import os
 import random
 import time
+import re
 
 
 def custom_pic(path1, path2, pic, save_path):
-    print("开始执行合成函数")
     custom_colour = ""
-
     img1 = Image.open(path1)
-    img1 = img1.convert('RGB')
+    img1 = img1.convert('RGBA')
     # img1 = img1.resize((2000, 2000))  # 注意，是2个括号
 
     img2 = Image.open(path2)
-    img2 = img2.convert('RGB')
+    img2 = img2.convert('RGBA')
     # img2 = img2.resize((1000, 1000))
     img_array = img2.load()
 
@@ -66,6 +65,7 @@ def custom_pic(path1, path2, pic, save_path):
     y = int(height1 / 2 - height2 / 2)
     img1.paste(img2, (x, y), mask=img2)
     # img1.show()
+    pic = re.sub(r".jpg",r".png",pic)
     img1.save(save_path + "/" + pic)
     print("成功合成:", pic)
     time.sleep(3)
@@ -102,5 +102,5 @@ if __name__ == "__main__":
             back = random.sample(os.listdir(path1_dir), 1)[0]
             path1 = path1_dir + "/" + back
             n1 = abs(get_w_h(path2) - get_w_h(path1))
-            print("n1:",n1)
+            print("寻找底纹",n1)
         custom_pic(path1, path2, pic, save_path)
