@@ -1,6 +1,8 @@
 import csv
 import os
 import random
+from multiprocessing import Pool
+import queue
 
 from PIL import Image
 
@@ -89,13 +91,59 @@ def custom_pic(bj, sc):
     return im
 
 
+def working(pic_name, path_dir1, path_dir2, pros):
+    # q_name 图片完整名
+    # path_dir1 素材文件夹
+    # path_dir2 背景文件夹
+    # pros 所有产品规格
+    pig1_path = path_dir1 + r"/" + pic_name
+    # 分离文件名和扩展名
+    img_name, _ = os.path.splitext(pic_name)
+    bg_files = os.listdir(path_dir2)
+    new_path = path_dir1 + "new"
+    if not os.path.exists(new_path):
+        os.mkdir(new_path)
+    img1 = Image.open(pig1_path)
+    w1, h1 = img1.size
+    p1 = w1 / h1
+
+    # 根据比例选择一个比例相似的产品图规格
+    pro_ps = []
+    for p2 in pros:
+        # n1 是比例相差度
+        n1 = abs(p1 - float(p2))
+        # 把相差度满足条件度图片放入pic_bs中
+        if n1 < 0.01:
+            pro_ps.append(p2)
+    # 从pro_ps中随机选择一种产品规格作为目标规格
+    pro_p = float(random.sample(pro_ps, 1)[0])
+
+    # 随机选择一张背景图 按目标规格裁剪
+    b_img = random.sample(bg_files, 1)[0]
+    # 拼接完整路径
+    b_img_path = path_dir2 + r"/" + b_img
+
+    # 通过裁剪 获得背景图
+    bg_im = cut_image(b_img_path, pro_p)
+
+    # 把素材合成到底纹图上
+    img = custom_pic(bg_im, img1)  # 背景文件 素材文件
+
+    if not os.path.exists(new_path + r"/" + str(pro_p)):
+        os.mkdir(new_path + r"/" + str(pro_p))
+    save_new_path = new_path + r"/" + str(pro_p) + r"/" + img_name + r".png"
+    img.save(save_new_path)
+    print("成功合成:", save_new_path)
+
+
 if __name__ == '__main__':
+    q = queue.Queue()
     # 拿到一个素材 计算其比例
-    pig1_path_dir = r"/Users/gaotiansong/Desktop/new_image/素材图"  # 素材图文件夹
+    # pig1_path_dir = r"/Users/gaotiansong/Desktop/new_image/素材图"  # 素材图文件夹
     pig1_path_dir = input("请输入素材图文件夹路径:")
-    bg_dir_path = r"/Users/gaotiansong/Desktop/new_image/木纹"  # 未经处理度底纹图文件夹
+    # bg_dir_path = r"/Users/gaotiansong/Desktop/new_image/木纹"  # 未经处理度底纹图文件夹
     bg_dir_path = input("请输入底纹图文件夹:")
-    pro_size_path = r"txt.txt"
+    # pro_size_path = r"txt.txt"
     pro_size_path = input("请输入产品规格列表文件:")
     # 获取所有产品规格
     pro_sizes = []
@@ -103,44 +151,12 @@ if __name__ == '__main__':
         rows = csv.reader(f)
         for row in rows:
             pro_sizes.append(row[0])
-
     # 从文件夹中获取一个素材
     for f_name in os.listdir(pig1_path_dir):
-        pig1_path = pig1_path_dir + r"/" + f_name
-        # 分离文件名和扩展名
-        img_name, _ = os.path.splitext(f_name)
-        bg_files = os.listdir(bg_dir_path)
-        new_path = pig1_path_dir + "new"
-        if not os.path.exists(new_path):
-            os.mkdir(new_path)
-        img1 = Image.open(pig1_path)
-        w1, h1 = img1.size
-        p1 = w1 / h1
-
-        # 根据比例选择一个比例相似的产品图规格
-        pro_ps = []
-        for p2 in pro_sizes:
-            # n1 是比例相差度
-            n1 = abs(p1 - float(p2))
-            # 把相差度满足条件度图片放入pic_bs中
-            if n1 < 0.01:
-                pro_ps.append(p2)
-        # 从pro_ps中随机选择一种产品规格作为目标规格
-        pro_p = float(random.sample(pro_ps, 1)[0])
-
-        # 随机选择一张背景图 按目标规格裁剪
-        b_img = random.sample(bg_files, 1)[0]
-        # 拼接完整路径
-        b_img_path = bg_dir_path + r"/" + b_img
-
-        # 通过裁剪 获得背景图
-        bg_im = cut_image(b_img_path, pro_p)
-
-        # 把素材合成到底纹图上
-        img = custom_pic(bg_im, img1)  # 背景文件 素材文件
-
-        if not os.path.exists(new_path + r"/" + str(pro_p)):
-            os.mkdir(new_path + r"/" + str(pro_p))
-        save_new_path = new_path + r"/" + str(pro_p) + r"/" + img_name + r".png"
-        img.save(save_new_path)
-        print("成功合成:", save_new_path)
+        q.put(f_name)
+    pool = Pool(processes=10)
+    while not q.empty():
+        pool.apply_async(working, args=(q.get(), pig1_path_dir, bg_dir_path, pro_sizes))
+    pool.close()
+    pool.join()
+    _ = input("执行完毕 按任意键退出")
