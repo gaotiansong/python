@@ -137,6 +137,7 @@ def working(pic_name, path_dir1, path_dir2, pros):
 
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     q = queue.Queue()
     # 拿到一个素材 计算其比例
     # pig1_path_dir = r"/Users/gaotiansong/Desktop/new_image/素材图"  # 素材图文件夹
