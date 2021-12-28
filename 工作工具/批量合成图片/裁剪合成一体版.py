@@ -1,4 +1,5 @@
 import csv
+import multiprocessing
 import os
 import random
 from multiprocessing import Pool
@@ -19,11 +20,20 @@ def cut_image(path, p):
         h2 = h01
         w2 = h2 * p
     # 计算截取框大小完成
+    print("计算截取框大小完成")
     left = (w01 - w2) / 2  # 左边离左边的距离
     up = 0
     right = w01 / 2 + w2 / 2
     below = h2
     im = img_bg.crop((int(left), int(up), int(right), int(below)))
+    w, h = im.size
+    s = w * h
+    s1 = 1500 * 1500
+    if s > s1:
+        w001 = int((s1 * p) ** 0.5)
+        h001 = int((s1 / p) ** 0.5)
+        im = im.resize((w001, h001))
+    print("背景大小:", im.size)
     return im
 
 
@@ -37,41 +47,16 @@ def custom_pic(bj, sc):
     # img2 = Image.open(path2)
     img2 = sc
     img2 = img2.convert('RGBA')
+
     # img2 = img2.resize((1000, 1000))
     img_array = img2.load()
+    # print("im.size=", im.size)
+    # print("img2.size=", img2.size)
 
     width1, height1 = im.size  # 获取宽度和高度
-    width2, height2 = img2.size  # 获取宽度和高度
-    # 长宽都比背景大
-    if width2 > width1 and height2 > height1:
-        # 以背景宽为元素宽
-        if width2 / width1 > height2 / height1:
-            w2 = width1
-            p = width1 / width2
-            h2 = height2 * p
-            img2 = img2.resize((int(w2), int(h2)))
-        # 以背景高为元素高
-        else:
-            h2 = height1
-            p = height1 / height2
-            w2 = width2 * p
-            img2 = img2.resize((int(w2), int(h2)))
-    # 长或者宽比背景大
-    elif width2 > width1 or height2 > height1:
-        # 元素的宽比背景的宽大
-        if width2 > width1:
-            w2 = width1
-            p = width1 / width2
-            h2 = height2 * p
-            img2 = img2.resize((int(w2), int(h2)))
-        else:
-            h2 = height2
-            p = height1 / height2
-            w2 = width2 * p
-            img2 = img2.resize((int(w2), int(h2)))
+    img2 = img2.resize((width1, height1))  # 元素背景一样大
+    width2, height2 = img2.size
 
-    width1, height1 = im.size  # 获取宽度和高度
-    width2, height2 = img2.size  # 获取宽度和高度
     img_array = img2.load()
 
     if custom_colour != "":
@@ -122,7 +107,7 @@ def working(pic_name, path_dir1, path_dir2, pros):
     b_img = random.sample(bg_files, 1)[0]
     # 拼接完整路径
     b_img_path = path_dir2 + r"/" + b_img
-
+    print("获取的背景图:", b_img_path)
     # 通过裁剪 获得背景图
     bg_im = cut_image(b_img_path, pro_p)
 
@@ -132,6 +117,10 @@ def working(pic_name, path_dir1, path_dir2, pros):
     if not os.path.exists(new_path + r"/" + str(pro_p)):
         os.mkdir(new_path + r"/" + str(pro_p))
     save_new_path = new_path + r"/" + str(pro_p) + r"/" + img_name + r".png"
+    name_n = 0
+    while os.path.exists(save_new_path):
+        name_n = name_n+1
+        save_new_path = new_path + r"/" + str(pro_p) + r"/" + img_name + str(name_n) + r".png"
     img.save(save_new_path)
     print("成功合成:", save_new_path)
 
@@ -140,12 +129,16 @@ if __name__ == '__main__':
     multiprocessing.freeze_support()
     q = queue.Queue()
     # 拿到一个素材 计算其比例
-    # pig1_path_dir = r"/Users/gaotiansong/Desktop/new_image/素材图"  # 素材图文件夹
     pig1_path_dir = input("请输入素材图文件夹路径:")
-    # bg_dir_path = r"/Users/gaotiansong/Desktop/new_image/木纹"  # 未经处理度底纹图文件夹
+    # pig1_path_dir = r"D:\无框挂牌资料库\格言2021.12.7（1）"
     bg_dir_path = input("请输入底纹图文件夹:")
-    # pro_size_path = r"txt.txt"
+    # bg_dir_path = r"D:\无框挂牌资料库\木纹问题"
     pro_size_path = input("请输入产品规格列表文件:")
+    # pro_size_path = r"D:\无框挂牌资料库\1.txt"
+    p = input("请输入进程数(开多可能卡),可直接回车跳过:")
+    if p == "":
+        p = 1
+    p = int(p)
     # 获取所有产品规格
     pro_sizes = []
     with open(pro_size_path) as f:
@@ -155,7 +148,7 @@ if __name__ == '__main__':
     # 从文件夹中获取一个素材
     for f_name in os.listdir(pig1_path_dir):
         q.put(f_name)
-    pool = Pool(processes=10)
+    pool = Pool(processes=p)
     while not q.empty():
         pool.apply_async(working, args=(q.get(), pig1_path_dir, bg_dir_path, pro_sizes))
     pool.close()
