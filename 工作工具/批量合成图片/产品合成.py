@@ -88,6 +88,7 @@ if __name__ == '__main__':
         pro_dir = pro_dir_root + r"/" + now_date
         if not os.path.exists(pro_dir):
             os.mkdir(pro_dir)
+        pro_rows = []
         for root in os.listdir(bg_dir):
             # 获取每一种尺寸规格
             if "DS_Store" in root:
@@ -112,12 +113,15 @@ if __name__ == '__main__':
                 img_s.append(img_new_path)
             name = pro_name[0]
             pro_list.append(name)
+            pro_list.append(sku_f+str(time.time()).replace(r".", ""))
             var_name = root
             pro_list.append(var_name)
             img_ls = img_s
             for im in img_ls:
                 pro_list.append(im)
-            with open(pro_dir_root + r"/pro.csv", "a", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow(pro_list)
-                print("成功合成:", pro_list)
+            pro_rows.append(pro_list)
+        with open(pro_dir_root + r"/pro.csv", "a", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerows(pro_rows)
+            writer.writerow([])
+            print("成功合成:", pro_rows)
