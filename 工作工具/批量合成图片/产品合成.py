@@ -41,12 +41,8 @@ def custom_pro_pic(path_img, path_pic):
         p2xs.append(pos[-i][0])
         p2ys.append(pos[-i][1])
     p2 = (max(p2xs) + 2, max(p2ys) + 2)  # 比最大大2像素
-
-    # p2 = pos[-1]
     w = p2[0] - p1[0]
     h = p2[1] - p1[1]
-
-    print("p1,p2", p1, p2)
 
     # 获取 一个元素 元素在下 需要调整元素的位置
     im = Image.open(path_pic)
@@ -68,8 +64,14 @@ def custom_pro_pic(path_img, path_pic):
 
 
 if __name__ == '__main__':
-    img_dir = r"/Users/gaotiansong/Desktop/jin挂牌素材new/1.0"  # 素材图文件夹
-    bg_dir = r"/Users/gaotiansong/Desktop/70-1-1郑伟晨"  # 背景图文件夹
+    # img_dir = r"/Users/gaotiansong/Desktop/jin挂牌素材new/1.0"  # 素材图文件夹
+    img_dir = input("素材图文件夹:")
+    img_dir = img_dir.strip()
+    # bg_dir = "/Users/gaotiansong/Desktop/产品背景图"  # 背景图文件夹
+    bg_dir = input("背景图文件夹:")
+    bg_dir = bg_dir.strip()
+    sku_f = input("输入SKU前缀(可用店铺名的一部分):")
+    sku_f = sku_f.strip()
     pro_name = ""
     for img in os.listdir(img_dir):
         if "DS_Store" in img:
@@ -115,7 +117,7 @@ if __name__ == '__main__':
             img_ls = img_s
             for im in img_ls:
                 pro_list.append(im)
-            with open(pro_dir_root + r"/pro.csv", "a") as f:
+            with open(pro_dir_root + r"/pro.csv", "a", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(pro_list)
                 print("成功合成:", pro_list)
