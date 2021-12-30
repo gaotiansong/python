@@ -113,13 +113,14 @@ if __name__ == '__main__':
                 img_s.append(img_new_path)
             name = pro_name[0]
             pro_list.append(name)
-            pro_list.append(sku_f+str(time.time()).replace(r".", ""))
+            pro_list.append(sku_f + str(time.time()).replace(r".", ""))
             var_name = root
             pro_list.append(var_name)
             img_ls = img_s
             for im in img_ls:
                 pro_list.append(im)
             pro_rows.append(pro_list)
+            print("成功合成:", name)
         with open(pro_dir_root + r"/pro.csv", "a", newline="") as f:
             writer = csv.writer(f)
             writer.writerows(pro_rows)
