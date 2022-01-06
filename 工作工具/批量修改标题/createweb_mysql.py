@@ -1,4 +1,3 @@
-#coding=utf-8
 import pymysql
 import csv
 import re
@@ -6,10 +5,10 @@ from random import sample
 
 def find_cursor():
     # 打开数据库连接
-    db = pymysql.connect(host='',
-                        user='',
-                        password='',
-                        database='keyword')
+    db = pymysql.connect(host='数据库地址',
+                        user='用户名',
+                        password='密码',
+                        database='数据库名')
 
     # 使用 cursor() 方法创建一个游标对象 cursor
     cursor = db.cursor()
@@ -30,6 +29,14 @@ def find_datas(tablename):
         datas.append(row[1])
     datas=list(set(datas))
     return datas
+
+def find_custom_keys(pro_key):
+    keys=[]
+    with open(pro_key,"r",encoding="utf-8") as f:
+        rows=csv.reader(f)
+        for key in rows:
+            keys.append(key[0].strip())
+    return keys
 
 if __name__=="__main__":
     #获取各种关键词
@@ -65,14 +72,14 @@ if __name__=="__main__":
     newpro_path=newpro_path[0]+r"New.csv"
 
     #替换成新文件
-    _=open(newpro_path,"w")
+    _=open(newpro_path,"w",encoding="utf-8")
 
     custom1=input("固定关键词1，出现在标题最前面，可直接回车跳过：")
     custom2=input("固定关键词2，出现在素材标签后，可直接回车跳过：")
     custom3=input("固定关键词3，出现在“For”前面，可直接回车跳过：")
 
 
-    with open(pro_tath,"r") as f:
+    with open(pro_tath,"r",encoding="gb18030") as f:
         pros=csv.reader(f)
         for p in pros:
             if p[0]=="Seller SKU" or p[0]=="item_sku":
@@ -100,12 +107,9 @@ if __name__=="__main__":
                 lss=[custom1]+[p[1]]+[custom2]+[custom_key]+ls+[add1]+[add2]+[zt1]+[custom3]+["For"]+[ch1]
                 s=" ".join(lss)
                 s=s.strip()
-
                 s=s.title().strip()
                 s=re.sub("(\s)+"," ",s)
-
                 #print(n,size_title,len(s),"ls=",ls)
-
                 if size_title <  len(s) < 195:
                     title=s
                     break
@@ -137,12 +141,13 @@ if __name__=="__main__":
                 lstags1=lstags
                 lstags=lstags+lstag
                 keys=",".join(list(set(lstags)))
-                if len(keys)>200 and len(keys)<250:
+                if len(keys)>150 and len(keys)<250:
                     break
                 elif len(keys)>250:
                     keys=",".join(lstags1)
 
-            with open(newpro_path,"a",newline="") as w:
+            with open(newpro_path,"a",newline="",encoding="utf8") as w:
                 writer=csv.writer(w)
                 #拼凑的标题写入文件
                 writer.writerow([p[0],p[1],h1,keys])
+    print("处理完毕 按 Enter 退出")
