@@ -5,10 +5,10 @@ from random import sample
 
 def find_cursor():
     # 打开数据库连接
-    db = pymysql.connect(host='数据库地址',
-                        user='用户名',
-                        password='密码',
-                        database='数据库名')
+    db = pymysql.connect(host='127.0.0.1',
+                        user='gaotiansong',
+                        password='123147gts',
+                        database='keyword')
 
     # 使用 cursor() 方法创建一个游标对象 cursor
     cursor = db.cursor()
@@ -17,7 +17,7 @@ def find_cursor():
 def find_datas(tablename):
     datas=[]
     cursor,db=find_cursor()
-    sql="select * from {tablename};".format(tablename=tablename)
+    sql="select * from {table};".format(table=tablename)
     try:
         cursor.execute(sql)
         db.commit()
@@ -104,27 +104,21 @@ if __name__=="__main__":
                 n=n+1
                 ls.append(sample(keywords,1)[0])
                 #拼凑的标题
-                lss=[custom1]+[p[1]]+[custom2]+[custom_key]+ls+[add1]+[add2]+[zt1]+[custom3]+["For"]+[ch1]
+                lss=[custom1]+[p[1]]+[custom2]+[sample(custom_keys,1)[0]]+ls+[sample(add1s,1)[0]]+\
+                    [sample(add2s,1)[0]]+[sample(zt1s,1)[0]]+[custom3]+["For"]+[sample(ch1s,1)[0]]+[p[2]]
                 s=" ".join(lss)
                 s=s.strip()
                 s=s.title().strip()
                 s=re.sub("(\s)+"," ",s)
                 #print(n,size_title,len(s),"ls=",ls)
-                if size_title <  len(s) < 195:
+                if len(s)>200:
+                    print("标题太长，重新生成")
+                    print(s)
+                    ls=[]
+                    continue
+                elif size_title <  len(s) < 200:
                     title=s
                     break
-                elif len(s)>195:
-                    #大于200不能用
-                    #print("标题太长")
-                    #s1只有两种情况，太短和可以
-                    if len(s1)<100:
-                        #print("s1太短")
-                        s1=s
-                        continue
-                    else:
-                        #print("使用s1=",s1,"\n\n")
-                        title=s1
-                        break
                 else:
                     #标题太短则再让ls增加一个关键词
                     s1=s
@@ -136,15 +130,15 @@ if __name__=="__main__":
 
             #生成关键词
             while True:
-                lstags=[]
-                lstag=sample(keywords,5)
-                lstags1=lstags
-                lstags=lstags+lstag
-                keys=",".join(list(set(lstags)))
+                ls_tags=[]
+                ls_tag=sample(keywords, 5)
+                ls_tags1=ls_tags
+                ls_tags= ls_tags + ls_tag
+                keys=",".join(list(set(ls_tags)))
                 if len(keys)>150 and len(keys)<250:
                     break
                 elif len(keys)>250:
-                    keys=",".join(lstags1)
+                    keys=",".join(ls_tags1)
 
             with open(newpro_path,"a",newline="",encoding="utf8") as w:
                 writer=csv.writer(w)
