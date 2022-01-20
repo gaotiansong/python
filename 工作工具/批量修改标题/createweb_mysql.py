@@ -5,9 +5,9 @@ from random import sample
 
 def find_cursor():
     # 打开数据库连接
-    db = pymysql.connect(host='127.0.0.1',
-                        user='gaotiansong',
-                        password='123147gts',
+    db = pymysql.connect(host='',
+                        user='',
+                        password='',
                         database='keyword')
 
     # 使用 cursor() 方法创建一个游标对象 cursor
@@ -17,7 +17,7 @@ def find_cursor():
 def find_datas(tablename):
     datas=[]
     cursor,db=find_cursor()
-    sql="select * from {table};".format(table=tablename)
+    sql="select * from {tablename};".format(tablename=tablename)
     try:
         cursor.execute(sql)
         db.commit()
