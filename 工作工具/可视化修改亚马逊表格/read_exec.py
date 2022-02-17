@@ -17,6 +17,7 @@ class Read_exec():
     c_image1=0
     c_image2=0
     c_image3=0
+    max_r=my_sheet.max_row
     def open_excl(self,path):
         self.path=path
         self.wb = load_workbook(path)
@@ -31,6 +32,7 @@ class Read_exec():
             if self.my_sheet.cell(3, c).value == "other_image_url2":
                 self.c_image3 = c
         print("执行打开表格:",self.c_name,self.c_image1)
+        self.max_r=self.my_sheet.max_row
 
     def get_image(self,n):
         n=n+3 #从第四行开始
