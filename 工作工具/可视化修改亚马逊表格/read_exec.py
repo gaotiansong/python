@@ -35,10 +35,12 @@ class Read_exec():
         self.max_r=self.my_sheet.max_row
 
     def get_image(self,n):
+        print("go get_image")
         n=n+3 #从第四行开始
         url=self.my_sheet.cell(n, self.c_image1).value
         name=self.my_sheet.cell(n, self.c_name).value
         print("url=",url)
+        print("ok get_image")
         return url,name
 
     def sava_f(self,n,tx):
