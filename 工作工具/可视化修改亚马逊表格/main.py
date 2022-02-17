@@ -75,10 +75,7 @@ class Example(QWidget):
         self.th_test.start() #创建线程实列
         self.th_test.signal.connect(self.change) #信号链接到函数 函数可以接收到传递过来到信号
         self.page_name.setText(str(self.n))
-        if self.n>1:
-            self.button_up.setEnabled(True)
-        if self.n>=self.all_page-3:
-            self.button_next.setEnabled(False)
+
 
     def get_up(self):
         self.n=self.n-1
@@ -86,29 +83,10 @@ class Example(QWidget):
         self.th_test.signal.connect(self.change) #信号链接到函数 函数可以接收到传递过来到信号
         self.page_name.setText(str(self.n))
         print("self.n=",self.n)
-        if self.n==1:
-            self.button_up.setEnabled(False)
-        if self.n<self.all_page:
-            self.button_next.setEnabled(True)
-
 
     def change(self,msg):
         #接受传递过来到信号
         self.lb_name.setText(msg)
-
-    def showpic(self,n):
-        # 获取远程图片
-        print("n=",n)
-        self.url,self.name = self.rd.get_image(self.n)
-        self.lb_name.setText(self.name)
-        req = requests.get(self.url)
-        self.photo = QPixmap()
-        self.photo.loadFromData(req.content)
-        self.img1.setPixmap(self.photo) #显示图片
-        self.img2.setPixmap(self.photo)
-        self.img3.setPixmap(self.photo)
-
-        #print("图片=", self.photo.size().width(), self.photo.size().height())
 
     def save_excl(self):
         tx = self.lb_name.toPlainText()
@@ -163,38 +141,46 @@ class Example(QWidget):
         self.path_edit.setFixedSize(500, 30)
 
         #确定按钮
-        ok_path_button = QPushButton("确定",self)
-        ok_path_button.move(660,450)
-        ok_path_button.clicked.connect(self.ok_select_f)
+        self.ok_path_button = QPushButton("确定",self)
+        self.ok_path_button.move(660,450)
+        self.ok_path_button.clicked.connect(self.ok_select_f)
 
-        opt_path_button = QPushButton("选择文件",self)
-        opt_path_button.move(570, 450)
-        opt_path_button.clicked.connect(self.Select_f)
+        self.opt_path_button = QPushButton("选择文件",self)
+        self.opt_path_button.move(570, 450)
+        self.opt_path_button.clicked.connect(self.Select_f)
 
         self.test_button = QPushButton("测试",self)
         self.test_button.move(720,450)
         self.test_button.clicked.connect(self.get_next)
-
-
 
         self.setGeometry(300, 300, 350, 250)
         self.setWindowTitle('亚马逊商品修改')
         self.show()
 
     def Select_f(self):
+        self.ok_path_button.setEnabled(True)
         f_Name,_ = QFileDialog.getOpenFileName(self,"选取文件",self.cwd, # 起始路径
                                                                 "All Files (*);;Text Files (*.txt)")  # 设置文件扩展名过滤,用双分号间隔
         self.path_edit.setText(f_Name)
         print(f_Name)
-    def ok_select_f(self):
-        f_Name=self.path_edit.text()
-        self.rd.open_excl(f_Name)
+    def ok_select_f1(self):
+        # 加载图片
+        path_excel=self.path_edit.text()
+        self.rd.open_excl(path_excel)
         self.n=0
         self.all_page = self.rd.max_r
         self.page_all.setText(str(self.all_page-3))
         self.button_up.setEnabled(False)
         print("self.rd.max_r=",self.rd.max_r)
         self.get_next()
+
+    def ok_select_f(self):
+        self.open_th=OpenExcel(self)
+        # 启动线程用来加载文件
+        self.open_th.start()
+
+
+
 
 class MyThread(QThread):
     def __init__(self, pa=None):
@@ -215,12 +201,46 @@ class GetTh(QThread):
     #下载图片，下载完后显示图片
     def run(self):
         print("n=",self.ge.n)
+        #设置按钮为不可点击
+        self.ge.button_next.setEnabled(False)
+        self.ge.button_up.setEnabled(False)
+
         self.ge.url,self.ge.name = self.ge.rd.get_image(self.ge.n)
         self.signal.emit(self.ge.name) #发射信号
         self.ge.photo = QPixmap()
         self.ge.photo.loadFromData(requests.get(self.ge.url).content)
         self.ge.img2.setPixmap(self.ge.photo)
 
+        if 1<self.ge.n<self.ge.all_page-3:
+            #上一页可用
+            self.ge.button_up.setEnabled(True)
+            self.ge.button_next.setEnabled(True)
+        if self.ge.n==self.ge.all_page-3:
+            self.ge.button_next.setEnabled(False)
+            self.ge.button_up.setEnabled(True)
+        if self.ge.n==1:
+            self.ge.button_next.setEnabled(True)
+            self.ge.button_up.setEnabled(False)
+
+
+class OpenExcel(QThread):
+    SignalExcel = pyqtSignal(str) #定义信号
+    def __init__(self,pa=None):
+        super().__init__(pa)
+        self.go = pa
+    #加载完文件后 所有按钮可用
+    def run(self):
+        print("使用多线程加载表格")
+        self.go.ok_path_button.setEnabled(False)
+        path_excel=self.go.path_edit.text()
+        self.go.rd.open_excl(path_excel)
+        self.go.n=0
+        self.go.all_page = self.go.rd.max_r
+        self.go.page_all.setText(str(self.go.all_page-3))
+        self.go.button_up.setEnabled(False)
+        print("self.rd.max_r=",self.go.rd.max_r)
+        self.go.get_next()
+        self.go.ok_path_button.setEnabled(True)
 
 def main():
     app = QApplication(sys.argv)
