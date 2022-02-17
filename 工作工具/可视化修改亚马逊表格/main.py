@@ -58,8 +58,6 @@ class Example(QWidget):
         self.page_name.setFixedSize(40, 20)
         self.page_name.setText(self.page_name.text())
 
-        self.th_test = GetTh(self)
-
         self.th = MyThread(self)  # 重写的多线程对象
         self.lb_name.textChanged.connect(self.th.run)  # 当内容发生变化时触发此信号，
 
@@ -71,22 +69,51 @@ class Example(QWidget):
         print("宽=", self.size().width())
 
     def get_next(self):
+        # 检查过，不可能出错
+        print("go get_next(self)")
+        self.th_test = GetTh(self)
         self.n=self.n+1
-        self.th_test.start() #创建线程实列
+        self.th_test.start() #启动线程
         self.th_test.signal.connect(self.change) #信号链接到函数 函数可以接收到传递过来到信号
+        self.th_test.signal_next.connect(self.change_next)
+        self.th_test.signal_up.connect(self.change_up)
+
         self.page_name.setText(str(self.n))
+        self.th_test.exit()
+        print("ok get_next(self)")
 
 
     def get_up(self):
+        print("go get_up(self)")
         self.n=self.n-1
         self.th_test.start() #创建线程实列
         self.th_test.signal.connect(self.change) #信号链接到函数 函数可以接收到传递过来到信号
+        self.th_test.signal_next.connect(self.change_next)
+        self.th_test.signal_up.connect(self.change_up)
+
         self.page_name.setText(str(self.n))
-        print("self.n=",self.n)
+        self.th_test.exit()
+        print("ok get_up(self)")
+    
+    def get_rest(self):
+        self.th_test.start()
+        self.th_test.signal.connect(self.change)
+        self.th_test.signal_next.connect(self.change_next)
+        self.th_test.signal_up.connect(self.change_up)
+        self.page_name.setText(str(self.n))
+        self.th_test.exit()
 
     def change(self,msg):
         #接受传递过来到信号
+        print("go change(self,msg)")
         self.lb_name.setText(msg)
+        print("ok change(self,msg)")
+    def change_next(self,msg):
+        print("msg_next=",msg)
+        self.button_next.setEnabled(msg)
+    def change_up(self,msg):
+        print("msg_up=",msg)
+        self.button_up.setEnabled(msg)
 
     def save_excl(self):
         tx = self.lb_name.toPlainText()
@@ -118,17 +145,25 @@ class Example(QWidget):
         button_save.move(650, 220)
         button_save.clicked.connect(self.save_excl)
 
+        #刷新
+        button_res = QPushButton("刷新", self)
+        button_res.setFixedSize(100, 50)
+        button_res.move(750,220)
+        button_res.clicked.connect(self.get_rest)
+
         # 下一条按钮
         self.button_next = QPushButton("下一条", self)
         self.button_next.setFixedSize(100, 50)
         self.button_next.move(650, 270)
         #button_next.clicked.connect(self.get_next)
+        self.button_next.clicked.connect(self.save_excl)
         self.button_next.clicked.connect(self.get_next)
 
         #上一条按钮
         self.button_up = QPushButton("上一条", self)
         self.button_up.setFixedSize(100, 50)
         self.button_up.move(750, 270)
+        self.button_up.clicked.connect(self.save_excl)
         self.button_up.clicked.connect(self.get_up)
 
         # 文件选择区域
@@ -149,9 +184,9 @@ class Example(QWidget):
         self.opt_path_button.move(570, 450)
         self.opt_path_button.clicked.connect(self.Select_f)
 
-        self.test_button = QPushButton("测试",self)
-        self.test_button.move(720,450)
-        self.test_button.clicked.connect(self.get_next)
+        #self.test_button = QPushButton("测试",self)
+        #self.test_button.move(720,450)
+        #self.test_button.clicked.connect(self.get_next)
 
         self.setGeometry(300, 300, 350, 250)
         self.setWindowTitle('亚马逊商品修改')
@@ -179,9 +214,6 @@ class Example(QWidget):
         # 启动线程用来加载文件
         self.open_th.start()
 
-
-
-
 class MyThread(QThread):
     def __init__(self, pa=None):
         super().__init__(pa)
@@ -194,34 +226,47 @@ class MyThread(QThread):
         self.pa.page_name.setText(str(pg)) #把页码数设置到页码上
 
 class GetTh(QThread):
+    print("go GetTh")
     signal = pyqtSignal(str) #定义信号
+    signal_next = pyqtSignal(bool)
+    signal_up = pyqtSignal(bool)
+
     def __init__(self,pa=None):
         super().__init__(pa)
         self.ge = pa
+
     #下载图片，下载完后显示图片
     def run(self):
+        print("go image")
         print("n=",self.ge.n)
         #设置按钮为不可点击
-        self.ge.button_next.setEnabled(False)
-        self.ge.button_up.setEnabled(False)
+        self.signal_next.emit(False) #发射信号
+        self.signal_up.emit(False)
 
         self.ge.url,self.ge.name = self.ge.rd.get_image(self.ge.n)
         self.signal.emit(self.ge.name) #发射信号
         self.ge.photo = QPixmap()
-        self.ge.photo.loadFromData(requests.get(self.ge.url).content)
+        try:
+            reg=requests.get(self.ge.url,timeout=20)
+        except Exception as e:
+            print(e)
+        self.ge.photo.loadFromData(reg.content)
         self.ge.img2.setPixmap(self.ge.photo)
 
         if 1<self.ge.n<self.ge.all_page-3:
             #上一页可用
-            self.ge.button_up.setEnabled(True)
-            self.ge.button_next.setEnabled(True)
+            self.signal_next.emit(True) #发射信号
+            self.signal_up.emit(True)
         if self.ge.n==self.ge.all_page-3:
-            self.ge.button_next.setEnabled(False)
-            self.ge.button_up.setEnabled(True)
+            self.signal_next.emit(False)
+            self.signal_up.emit(True)
         if self.ge.n==1:
-            self.ge.button_next.setEnabled(True)
-            self.ge.button_up.setEnabled(False)
+            self.signal_next.emit(True)
+            self.signal_up.emit(False)
 
+        print("ok image\n\n")
+        self.exit()
+    print("go GetTh")
 
 class OpenExcel(QThread):
     SignalExcel = pyqtSignal(str) #定义信号
