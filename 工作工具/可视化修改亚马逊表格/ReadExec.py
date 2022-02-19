@@ -1,9 +1,8 @@
 # coding=utf-8
 import openpyxl
 from openpyxl import load_workbook
-class Read_exec():
+class ReadExec():
     path=""
-    #path="/Users/gaotiansong/Desktop/2.xlsx"
     try:
         wb = load_workbook(path)
         my_sheet = wb["Template"]
@@ -31,7 +30,6 @@ class Read_exec():
                 self.c_image2 = c
             if self.my_sheet.cell(3, c).value == "other_image_url2":
                 self.c_image3 = c
-        print("执行打开表格:",self.c_name,self.c_image1)
         self.max_r=self.my_sheet.max_row
 
     def get_image(self,n):
