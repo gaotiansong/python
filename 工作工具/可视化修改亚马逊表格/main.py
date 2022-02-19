@@ -1,19 +1,29 @@
 # file: absolute.py
 # !/usr/bin/python
 import sys
+import time
+
 from PyQt6.QtWidgets import QWidget, QLabel, QApplication, QTextEdit, QPushButton, QLineEdit, QFileDialog
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import QThread, pyqtSignal
 import requests
-import read_exec
+import ReadExec
 
-class Example(QWidget):
+
+class MyApp(QWidget):
     def __init__(self):
         super().__init__()
+        self.open_th = None
+        self.th_get_im = None
+        self.button_next = QPushButton("下一条", self)
+        self.path_edit = QLineEdit(self)
+        self.ok_path_button = QPushButton("确定", self)
+        self.opt_path_button = QPushButton("选择文件", self)
+        self.button_up = QPushButton("上一条", self)
         self.cwd = None
-        self.n = 0
+        self.n = 1
         self.all_page = 0
-        self.rd = read_exec.Read_exec()
+        self.rd = ReadExec.ReadExec()
         self.photo = QPixmap()
         self.name = ""
         self.url = ""
@@ -53,41 +63,40 @@ class Example(QWidget):
         self.th = MyThread(self)  # 重写的多线程对象
         self.lb_name.textChanged.connect(self.th.run)  # 当内容发生变化时触发此信号，
 
-        self.initUI()
+        self.init_ui()
         self.resize(1000, 500)  # 设置窗口大小
         self.move(100, 0)
 
-    def get_next(self):
-        # 检查过，不可能出错
-        self.th_get_im = GetTh(self)
-        self.n = self.n + 1
+    def change_page(self, sigin):
+        print("sigin=",sigin)
+        if sigin=="next":
+            print("执行get_next")
+            self.n = self.n + 1
+        if sigin=="up":
+            print("执行get_up")
+            self.n = self.n - 1
+        if sigin=="rest":
+            print("执行刷新")
+        self.button_next.setEnabled(False)
+        img_url, name = self.rd.get_image(self.n)
+        self.lb_name.setText(name)  # 设置文本内容
+        self.page_name.setText(str(self.n))  # 设置当前页码
+        self.th_get_im = GetTh(img_url, self.n, self.all_page)
         self.th_get_im.start()  # 启动线程
-        self.th_get_im.signal.connect(self.change)  # 信号链接到函数 函数可以接收到传递过来到信号
+        self.th_get_im.signal_photo.connect(self.change_img)  # 接受来自线程的图片数据
         self.th_get_im.signal_next.connect(self.change_next)
         self.th_get_im.signal_up.connect(self.change_up)
-
-        self.page_name.setText(str(self.n))
-        self.th_get_im.exit()
-
-    def get_up(self):
-        self.n = self.n - 1
-        self.th_get_im.start()  # 创建线程实列
-        self.th_get_im.signal.connect(self.change)  # 信号链接到函数 函数可以接收到传递过来到信号
-        self.th_get_im.signal_next.connect(self.change_next)
-        self.th_get_im.signal_up.connect(self.change_up)
-        self.page_name.setText(str(self.n))
-        self.th_get_im.exit()
-
-    def get_rest(self):
-        self.th_get_im.start()
-        self.th_get_im.signal.connect(self.change)
-        self.th_get_im.signal_next.connect(self.change_next)
-        self.th_get_im.signal_up.connect(self.change_up)
-        self.page_name.setText(str(self.n))
         self.th_get_im.exit()
 
     def change(self, msg):
         self.lb_name.setText(msg)
+
+    def change_img(self, msg):
+        print("图片数据:", msg)
+        if msg.size().width()==0:
+            self.img2.setText("图片加载中...")
+        else:
+            self.img2.setPixmap(msg)  # 设置图片
 
     def change_next(self, msg):
         self.button_next.setEnabled(msg)
@@ -100,100 +109,82 @@ class Example(QWidget):
         self.size_name.setText(str(len(tx)))
         self.rd.sava_f(self.n, tx)
 
-    def initUI(self):
+    def init_ui(self):
         self.setMaximumSize(1000, 1000)
         # 显示图片
-        # self.img1.move(60, 5)  # 位置
-        # self.img1.setFixedSize(200, 200)  # 大小
-        # self.img1.setScaledContents(True)  # 设置图片自适应窗口大小
-
         self.img2.move(270, 5)  # 位置
         self.img2.setFixedSize(250, 250)  # 大小
         self.img2.setScaledContents(True)  # 设置图片自适应窗口大小
-
-        # self.img3.move(480, 5)  # 位置
-        # self.img3.setFixedSize(200, 200)  # 大小
-        # self.img3.setScaledContents(True)  # 设置图片自适应窗口大小
-
         # 商品标题
         lb_name1 = QLabel("标题:", self)
         lb_name1.move(20, 285)
-
         # 保存按钮
         button_save = QPushButton("保存", self)
         button_save.setFixedSize(100, 50)
         button_save.move(650, 270)
         button_save.clicked.connect(self.save_excl)
-
         # 刷新
         button_res = QPushButton("刷新", self)
         button_res.setFixedSize(100, 50)
         button_res.move(750, 270)
-        button_res.clicked.connect(self.get_rest)
-
+        button_res.clicked.connect(lambda :self.change_page("rest"))
         # 下一条按钮
-        self.button_next = QPushButton("下一条", self)
         self.button_next.setFixedSize(100, 50)
         self.button_next.move(650, 320)
-        # button_next.clicked.connect(self.get_next)
-        self.button_next.clicked.connect(self.save_excl)
-        self.button_next.clicked.connect(self.get_next)
-
+        # self.button_next.clicked.connect(self.save_excl)
+        self.button_next.clicked.connect(lambda :self.change_page("next"))
         # 上一条按钮
-        self.button_up = QPushButton("上一条", self)
         self.button_up.setFixedSize(100, 50)
         self.button_up.move(750, 320)
-        self.button_up.clicked.connect(self.save_excl)
-        self.button_up.clicked.connect(self.get_up)
-
+        # self.button_up.clicked.connect(self.save_excl)
+        self.button_up.clicked.connect(lambda :self.change_page("up"))
         # 文件选择区域
         # 标题
         path_name = QLabel("文件:", self)
         path_name.move(20, 456)
         # 单行文本
-        self.path_edit = QLineEdit(self)
         self.path_edit.move(60, 450)
         self.path_edit.setFixedSize(500, 30)
-
         # 确定按钮
-        self.ok_path_button = QPushButton("确定", self)
         self.ok_path_button.move(660, 450)
         self.ok_path_button.clicked.connect(self.ok_select_f)
-
-        self.opt_path_button = QPushButton("选择文件", self)
+        # 选择文件
         self.opt_path_button.move(570, 450)
-        self.opt_path_button.clicked.connect(self.Select_f)
-
-        # self.test_button = QPushButton("测试",self)
-        # self.test_button.move(720,450)
-        # self.test_button.clicked.connect(self.get_next)
+        self.opt_path_button.clicked.connect(self.select_f)
 
         self.setGeometry(300, 300, 350, 250)
         self.setWindowTitle('亚马逊商品修改')
         self.show()
 
-    def Select_f(self):
+    def select_f(self):
+        # 获取表格文件地址
         self.ok_path_button.setEnabled(True)
-        f_Name, _ = QFileDialog.getOpenFileName(self, "选取文件", self.cwd,  # 起始路径
+        f_name, _ = QFileDialog.getOpenFileName(self, "选取文件", self.cwd,  # 起始路径
                                                 "All Files (*);;Text Files (*.txt)")  # 设置文件扩展名过滤,用双分号间隔
-        self.path_edit.setText(f_Name)
-        print(f_Name)
+        self.path_edit.setText(f_name)
+        print(f_name)
 
-    def ok_select_f1(self):
-        # 加载图片
-        path_excel = self.path_edit.text()
-        self.rd.open_excl(path_excel)
-        self.n = 0
+    def ok_select_f(self):
+        path = self.path_edit.text()
+        self.open_th = OpenExcel(path)
+
+        # 启动线程用来加载文件
+        self.open_th.start()  # 创建线程
+        self.open_th.SignalExcel_data.connect(self.get_exec_data)  # 链接信号到函数 用函数接受来自线程的信号
+        self.open_th.exit()
+
+    def get_exec_data(self, msg):
+        # 获取子线程读取的表格数据
+        print("getExecData  msg=", msg)
+        self.rd = msg
+        self.page_all.setText(str(self.rd.max_r))
         self.all_page = self.rd.max_r
         self.page_all.setText(str(self.all_page - 3))
         self.button_up.setEnabled(False)
-        print("self.rd.max_r=", self.rd.max_r)
-        self.get_next()
+        self.page_name.setText("1")
+        self.n=1
+        self.change_page("rest")
 
-    def ok_select_f(self):
-        self.open_th = OpenExcel(self)
-        # 启动线程用来加载文件
-        self.open_th.start()
 
 class MyThread(QThread):
     def __init__(self, pa=None):
@@ -206,71 +197,77 @@ class MyThread(QThread):
         pg = self.pa.page_name.text()  # 获取页码数
         self.pa.page_name.setText(str(pg))  # 把页码数设置到页码上
 
+
+# noinspection PyUnresolvedReferences
 class GetTh(QThread):
     print("go GetTh")
     signal = pyqtSignal(str)  # 定义信号
     signal_next = pyqtSignal(bool)
     signal_up = pyqtSignal(bool)
     signal_photo = pyqtSignal(QPixmap)
-    def __init__(self, pa=None):
-        super().__init__(pa)
-        self.ge = pa
+
+    def __init__(self, img_url, n, all_page):
+        super(QThread, self).__init__()
+        self.photo = QPixmap()
+        self.rd = ReadExec.ReadExec()  # 实例化
+        self.img_url = img_url
+        self.n = n
+        self.all_page = all_page
+
     # 下载图片，下载完后显示图片
     def run(self):
-        global reg
         print("go image")
-        print("n=", self.ge.n)
         # 设置按钮为不可点击
         self.signal_next.emit(False)  # 发射信号
         self.signal_up.emit(False)
-        self.signal_photo.emit(QPixmap())
-        self.ge.img2.setPixmap(QPixmap())  # 设置图片
-        self.ge.url, self.ge.name = self.ge.rd.get_image(self.ge.n)
-        self.signal.emit(self.ge.name)  # 发射信号
-        self.ge.photo = QPixmap()
+        photo=QPixmap()
+        print("photo.size()=",photo.size().width())
+        self.signal_photo.emit(photo)  #
+        # 获取图片链接和图片地址
+        # 获取图片内容
         try:
-            reg = requests.get(self.ge.url, timeout=20)
+            self.photo.loadFromData(requests.get(self.img_url, timeout=20).content)
         except Exception as e:
             print(e)
-        self.ge.photo.loadFromData(reg.content)
-        self.ge.img2.setPixmap(self.ge.photo) #设置图片
-
-        if 1 < self.ge.n < self.ge.all_page - 3:
-            self.signal_next.emit(True)  # 发射信号
+            self.exit()
+        self.signal_photo.emit(self.photo)  # 把图片发送到主框架并显示出来
+        # 恢复按钮状态
+        print("self.n=", self.n)
+        print("self.all_page - 3=", self.all_page - 3)
+        if 1 < self.n < self.all_page - 3:
+            self.signal_next.emit(True)
             self.signal_up.emit(True)
-        if self.ge.n == self.ge.all_page - 3:
+        if self.n == self.all_page - 3:
             self.signal_next.emit(False)
             self.signal_up.emit(True)
-        if self.ge.n == 1:
+        if self.n == 1:
             self.signal_next.emit(True)
             self.signal_up.emit(False)
-
         print("ok image\n\n")
         self.exit()
 
+
+# 用来打开表格
 class OpenExcel(QThread):
-    SignalExcel = pyqtSignal(str)  # 定义信号
-    def __init__(self, pa=None):
-        super().__init__(pa)
-        self.go = pa
-    # 加载完文件后 所有按钮可用
+    SignalExcel_data = pyqtSignal(ReadExec.ReadExec)
+    RE = ReadExec.ReadExec()  # 实例化
+
+    def __init__(self, path):
+        super(OpenExcel, self).__init__()
+        self.path = path
+
+    def __del__(self):
+        self.wait()
+
     def run(self):
-        print("使用多线程加载表格")
-        self.go.ok_path_button.setEnabled(False) #改变按钮状态
-        path_excel = self.go.path_edit.text() #获取输入多文件地址
-        self.go.rd.open_excl(path_excel)
-        self.go.n = 0
-        self.go.all_page = self.go.rd.max_r #最大页码
-        self.go.page_all.setText(str(self.go.all_page - 3)) #设置最大页码
-        self.go.button_up.setEnabled(False) #设置按钮状态
-        print("self.rd.max_r=", self.go.rd.max_r)
-        self.go.get_next()
-        self.go.ok_path_button.setEnabled(True)
-        self.exit()
+        print("使用多线程==", self.path)
+        self.RE.open_excl(self.path)  # 执行函数获得一系列数据
+        self.SignalExcel_data.emit(self.RE)  # 把实列传入主函数
+
 
 def main():
     app = QApplication(sys.argv)
-    ex = Example()
+    _ = MyApp()
     sys.exit(app.exec())
 
 
