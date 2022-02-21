@@ -5,10 +5,10 @@ import sys
 import requests
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QWidget, QLabel, QApplication, QTextEdit, QPushButton, QLineEdit, QFileDialog,QInputDialog
+from PyQt6.QtWidgets import QWidget, QLabel, QApplication, QTextEdit, QPushButton, QLineEdit, QFileDialog,QInputDialog,QComboBox
 
 import ReadExec
-
+import ConMysql
 
 class MyApp(QWidget):
     def __init__(self):
@@ -65,7 +65,7 @@ class MyApp(QWidget):
         self.lb_name.textChanged.connect(self.th.run)  # 当内容发生变化时触发此信号，
 
         self.init_ui()
-        self.resize(1000, 500)  # 设置窗口大小
+        self.resize(1000, 700)  # 设置窗口大小
         self.move(100, 0)
 
     def change_page(self, sigin):
@@ -120,7 +120,7 @@ class MyApp(QWidget):
         self.rd.sava_f(self.n, tx)
 
     def init_ui(self):
-        self.setMaximumSize(1000, 1000)
+        self.setMaximumSize(1000, 1200)
         # 显示图片
         self.img2.move(270, 5)  # 位置
         self.img2.setFixedSize(250, 250)  # 大小
@@ -153,6 +153,11 @@ class MyApp(QWidget):
         # 单行文本
         self.path_edit.move(60, 450)
         self.path_edit.setFixedSize(500, 30)
+
+        # 选择文件
+        self.opt_path_button.move(570, 450)
+        self.opt_path_button.clicked.connect(self.select_f)
+
         # 确定按钮
         self.ok_path_button.move(660, 450)
         self.ok_path_button.clicked.connect(self.ok_select_f)
@@ -160,16 +165,40 @@ class MyApp(QWidget):
         #测试按钮
         self.test_button=QPushButton("测试",self)
         self.test_button.move(720,450)
-        self.test_button.clicked.connect(self.showDialog)
+        #self.test_button.clicked.connect(self.show_child)
         self.le=QLineEdit(self)
 
-        # 选择文件
-        self.opt_path_button.move(570, 450)
-        self.opt_path_button.clicked.connect(self.select_f)
+        #品牌名
+        self.brand_t=QLabel("品牌:",self)
+        self.brand_t.move(20,505)
+        self.brand_e=QLineEdit(self)
+        self.brand_e.move(60,500)
+        #核心词
+        self.core_word_t=QLabel("核心关键词:",self)
+        self.core_word_t.move(220,505)
+        #核心关键词库
+        self.cord_word_ls = QComboBox(self)
+        self.cord_word_ls.move(300,500)
+        # 从数据库获取关键词列表
+        for i in range(10):
+            self.cord_word_ls.addItem(str(i)+"关键词")
+        self.cord_word_ls.addItem("添加")
+        self.cord_word_ls.textActivated[str].connect(self.addKeyWord)
+        #添加核心关键词
+        self.add_keyword_buttom=QPushButton("添加",self)
+        self.add_keyword_buttom.move(400,500)
+        self.add_keyword_buttom.clicked.connect(self.addKeyWord)
+
+        #场景词
+        #self.for_word_t=QLabel("适合场景:",self)
 
         self.setGeometry(300, 300, 350, 250)
         self.setWindowTitle('亚马逊商品修改')
         self.show()
+
+    def addKeyWord(self):
+        self.child_window = Child()
+        self.child_window.show()
 
     def showDialog(self):
         text, ok = QInputDialog.getText(self, 'Input Dialog',
@@ -206,6 +235,53 @@ class MyApp(QWidget):
         self.n = 1
         self.change_page("rest")
 
+#子窗体
+class Child(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("我是子窗口啊")
+        self.setMinimumSize(500,500)
+        self.type_e_txt=""
+
+        #类别
+        self.name_t=QLabel("类  别:",self)
+        self.name_t.move(20,30)
+        self.name_e=QLineEdit(self)
+        self.name_e.setPlaceholderText("例:枕头套")
+        self.name_e.move(100,30)
+        #类型
+        self.type_t=QLabel("类  型:",self)
+        self.type_t.move(20,60)
+        self.type_e=QComboBox(self)
+        type_s=["核心","场景","风格"]
+        for i in type_s:
+            self.type_e.addItem(i)
+        self.type_e.move(100,60)
+        self.type_e_txt = self.type_e.currentText()
+        self.type_e.textActivated.connect(self.getType)
+        #内容
+        self.words_t=QLabel("关键词:",self)
+        self.words_t.move(20,90)
+        self.words_e=QTextEdit(self)
+        self.words_e.setPlaceholderText("一行一个关键词")
+        self.words_e.move(100,90)
+        # 确定
+        self.add_b=QPushButton("确定",self)
+        self.add_b.move(300,280)
+        self.add_b.clicked.connect(self.add_keyword)
+    def getType(self):
+        self.type_e_txt=str(self.type_e.currentText())
+    def add_keyword(self):
+        print("类别：",self.name_e.text())
+        print("类型：", self.type_e_txt)
+        print("内容：",self.words_e.toPlainText())
+        cm=ConMysql.ConMysql()
+        curses,db=cm.find_cursor()
+        print(curses,db)
+        #把获取的内容写入数据库
+        #刷新主窗口关键词列表
+        self.close()
+
 
 class MyThread(QThread):
     def __init__(self, pa=None):
@@ -241,6 +317,7 @@ class GetTh(QThread):
         photo = QPixmap()
         # 获取图片链接和图片地址
         # 获取图片内容
+        pho_msg = {"im": photo, "msg": ""}
         try:
             photo.loadFromData(requests.get(self.img_url, timeout=3).content)
             pho_msg = {"im": photo, "msg": "ok"}
@@ -264,7 +341,6 @@ class GetTh(QThread):
             self.signal_up.emit(False)
         print("ok image\n\n")
         self.exit()
-
 
 # 用来打开表格
 class OpenExcel(QThread):
