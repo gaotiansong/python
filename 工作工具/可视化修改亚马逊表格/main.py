@@ -1,12 +1,12 @@
 # file: absolute.py
 # !/usr/bin/python
 import sys
-import time
 
-from PyQt6.QtWidgets import QWidget, QLabel, QApplication, QTextEdit, QPushButton, QLineEdit, QFileDialog
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtCore import QThread, pyqtSignal
 import requests
+from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QWidget, QLabel, QApplication, QTextEdit, QPushButton, QLineEdit, QFileDialog,QInputDialog
+
 import ReadExec
 
 
@@ -26,6 +26,7 @@ class MyApp(QWidget):
         self.rd = ReadExec.ReadExec()
         self.photo = QPixmap()
         self.name = ""
+        self.new_name = ""
         self.url = ""
         # 显示图片
         self.img1 = QLabel("", self)
@@ -68,17 +69,26 @@ class MyApp(QWidget):
         self.move(100, 0)
 
     def change_page(self, sigin):
-        print("sigin=",sigin)
-        if sigin=="next":
+        self.button_next.setEnabled(False)
+        self.button_up.setEnabled(False)
+        self.img2.setText("图片加载中...")
+        print("self.name1=", self.name)
+        print("self.name2=", self.new_name)
+        print("当标题发生改变时，触发保存函数")
+        if self.name != self.new_name:
+            print("执行保存")
+            self.save_excl()
+        print("sigin=", sigin)
+        if sigin == "next":
             print("执行get_next")
             self.n = self.n + 1
-        if sigin=="up":
+        if sigin == "up":
             print("执行get_up")
             self.n = self.n - 1
-        if sigin=="rest":
+        if sigin == "rest":
             print("执行刷新")
-        self.button_next.setEnabled(False)
         img_url, name = self.rd.get_image(self.n)
+        self.name = name
         self.lb_name.setText(name)  # 设置文本内容
         self.page_name.setText(str(self.n))  # 设置当前页码
         self.th_get_im = GetTh(img_url, self.n, self.all_page)
@@ -93,10 +103,10 @@ class MyApp(QWidget):
 
     def change_img(self, msg):
         print("图片数据:", msg)
-        if msg.size().width()==0:
-            self.img2.setText("图片加载中...")
+        if msg["msg"]=="no":
+            self.img2.setText("图片加载失败")
         else:
-            self.img2.setPixmap(msg)  # 设置图片
+            self.img2.setPixmap(msg["im"])  # 设置图片
 
     def change_next(self, msg):
         self.button_next.setEnabled(msg)
@@ -127,17 +137,15 @@ class MyApp(QWidget):
         button_res = QPushButton("刷新", self)
         button_res.setFixedSize(100, 50)
         button_res.move(750, 270)
-        button_res.clicked.connect(lambda :self.change_page("rest"))
+        button_res.clicked.connect(lambda: self.change_page("rest"))
         # 下一条按钮
         self.button_next.setFixedSize(100, 50)
         self.button_next.move(650, 320)
-        # self.button_next.clicked.connect(self.save_excl)
-        self.button_next.clicked.connect(lambda :self.change_page("next"))
+        self.button_next.clicked.connect(lambda: self.change_page("next"))
         # 上一条按钮
         self.button_up.setFixedSize(100, 50)
         self.button_up.move(750, 320)
-        # self.button_up.clicked.connect(self.save_excl)
-        self.button_up.clicked.connect(lambda :self.change_page("up"))
+        self.button_up.clicked.connect(lambda: self.change_page("up"))
         # 文件选择区域
         # 标题
         path_name = QLabel("文件:", self)
@@ -148,6 +156,13 @@ class MyApp(QWidget):
         # 确定按钮
         self.ok_path_button.move(660, 450)
         self.ok_path_button.clicked.connect(self.ok_select_f)
+
+        #测试按钮
+        self.test_button=QPushButton("测试",self)
+        self.test_button.move(720,450)
+        self.test_button.clicked.connect(self.showDialog)
+        self.le=QLineEdit(self)
+
         # 选择文件
         self.opt_path_button.move(570, 450)
         self.opt_path_button.clicked.connect(self.select_f)
@@ -155,6 +170,12 @@ class MyApp(QWidget):
         self.setGeometry(300, 300, 350, 250)
         self.setWindowTitle('亚马逊商品修改')
         self.show()
+
+    def showDialog(self):
+        text, ok = QInputDialog.getText(self, 'Input Dialog',
+                                        'Enter your name:')
+        if ok:
+            self.le.setText(str(text))
 
     def select_f(self):
         # 获取表格文件地址
@@ -182,7 +203,7 @@ class MyApp(QWidget):
         self.page_all.setText(str(self.all_page - 3))
         self.button_up.setEnabled(False)
         self.page_name.setText("1")
-        self.n=1
+        self.n = 1
         self.change_page("rest")
 
 
@@ -193,18 +214,18 @@ class MyThread(QThread):
 
     def run(self):
         md = self.pa.lb_name.toPlainText()  # 获取标签上用户输入的内容。
+        self.pa.new_name = md
         self.pa.size_name.setText(str(len(md)))  # 将获取的长度赋值给size_name
         pg = self.pa.page_name.text()  # 获取页码数
         self.pa.page_name.setText(str(pg))  # 把页码数设置到页码上
 
 
-# noinspection PyUnresolvedReferences
 class GetTh(QThread):
     print("go GetTh")
     signal = pyqtSignal(str)  # 定义信号
     signal_next = pyqtSignal(bool)
     signal_up = pyqtSignal(bool)
-    signal_photo = pyqtSignal(QPixmap)
+    signal_photo = pyqtSignal(dict)
 
     def __init__(self, img_url, n, all_page):
         super(QThread, self).__init__()
@@ -217,20 +238,18 @@ class GetTh(QThread):
     # 下载图片，下载完后显示图片
     def run(self):
         print("go image")
-        # 设置按钮为不可点击
-        self.signal_next.emit(False)  # 发射信号
-        self.signal_up.emit(False)
-        photo=QPixmap()
-        print("photo.size()=",photo.size().width())
-        self.signal_photo.emit(photo)  #
+        photo = QPixmap()
         # 获取图片链接和图片地址
         # 获取图片内容
         try:
-            self.photo.loadFromData(requests.get(self.img_url, timeout=20).content)
+            photo.loadFromData(requests.get(self.img_url, timeout=3).content)
+            pho_msg = {"im": photo, "msg": "ok"}
+            self.signal_photo.emit(pho_msg)  # 把图片发送到主框架并显示出来
         except Exception as e:
             print(e)
+            pho_msg["msg"] = "no"
+            self.signal_photo.emit(pho_msg)
             self.exit()
-        self.signal_photo.emit(self.photo)  # 把图片发送到主框架并显示出来
         # 恢复按钮状态
         print("self.n=", self.n)
         print("self.all_page - 3=", self.all_page - 3)
