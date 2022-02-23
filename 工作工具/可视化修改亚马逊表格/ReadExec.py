@@ -11,7 +11,7 @@ class ReadExec:
         wb = Workbook()
         my_sheet = wb.active
         my_sheet.title = "Template"
-        print(e)
+        ##print(e)
     # 确定标题和图片所在列
     c_name = 0
     c_image1 = 0
@@ -35,17 +35,17 @@ class ReadExec:
         self.max_r = self.my_sheet.max_row
 
     def get_image(self, n):
-        print("go get_image")
+        ##print("go get_image")
         n = n + 3  # 从第四行开始
         url = self.my_sheet.cell(n, self.c_image1).value
         name = self.my_sheet.cell(n, self.c_name).value
-        print("url=", url)
-        print("ok get_image")
+        ##print("url=", url)
+        ##print("ok get_image")
         return url, name
 
     def sava_f(self, n, tx):
         n = n + 3  # 从第四行开始
         # 给格子赋值
         self.my_sheet.cell(n, self.c_name).value = tx
-        print("保存=", tx)
+        ##print("保存=", tx)
         self.wb.save(self.path)
