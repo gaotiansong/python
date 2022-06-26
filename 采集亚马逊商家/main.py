@@ -1,10 +1,11 @@
 # -*-coding:utf-8 -*-
 '''
-2022/06/24更新
+2022/06/26更新
+1.修复关闭浏览器太快无法采集到数据问题。
+2.修复有时候只保存一个URL问题
 作者：一个哲学家
 '''
 import datetime
-
 from lxml import etree
 
 from selenium import webdriver
@@ -12,16 +13,40 @@ import time
 import csv
 from selenium.webdriver.chrome.service import Service
 
+def find_ua():
+    import random
+    uas=[
+        'User-Agent="Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; en-us) AppleWebKit/534.50 (KHTML, like Gecko) Version/5.1 Safari/534.50"',
+        'User-Agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:2.0.1) Gecko/20100101 Firefox/4.0.1"',
+        'User-Agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11"',
+        'User-Agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36 OPR/26.0.1656.60"',
+        'User-Agent="Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; en) Opera 9.50"',
+        'User-Agent="Mozilla/5.0 (X11; U; Linux x86_64; zh-CN; rv:1.9.2.10) Gecko/20100922 Ubuntu/10.10 (maverick) Firefox/3.6.10"',
+        'User-Agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2"',
+        'User-Agent="Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16"',
+        'User-Agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36"',
+        'User-Agent="Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko"',
+        'User-Agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.11 TaoBrowser/2.0 Safari/536.11"',
+        'User-Agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.71 Safari/537.1 LBBROWSER"',
+        'User-Agent="Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; QQDownload 732; .NET4.0C; .NET4.0E)"',
+        'User-Agent="Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; SV1; QQDownload 732; .NET4.0C; .NET4.0E; SE 2.X MetaSr 1.0)"',
+        'User-Agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Maxthon/4.4.3.4000 Chrome/30.0.1599.101 Safari/537.36"',
+        'User-Agent="Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.122 UBrowser/4.0.3214.0 Safari/537.36"',
+    ]
+    return random.sample(uas,1)
 
 def find_driver():
-    prefs = {"profile.managed_default_content_settings.images": 2}  # 设置无图模式
+    #prefs = {"profile.managed_default_content_settings.images": 2}  # 设置无图模式
     options = webdriver.ChromeOptions()
-    options.add_experimental_option("prefs", prefs)  # 无图
+    #options.add_experimental_option("prefs", prefs)  # 无图
     options.add_argument("--lang=en")
     # options.add_argument("--headless")  # 不显示界面
     options.add_experimental_option("excludeSwitches", ["enable-logging"])
     options.add_argument('ignore-certificate-errors')
-    s = Service(r"C:\Users\Administrator\Desktop\1\chromedriver1.exe")  # 驱动器位置
+    ua=find_ua()[0]
+    print("ua==",ua)
+    options.add_argument(ua)
+    s = Service(r"chromedriver.exe")  # 驱动器位置
     driver = webdriver.Chrome(service=s, options=options)
     return driver
 
@@ -32,21 +57,35 @@ def find_company(url_page, url_asin,c):
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.common.by import By
     driver = find_driver()
-    driver.get(url_asin)
+    driver.set_page_load_timeout(3)
+    print("最多3秒")
+    try:
+        driver.get(url_asin)
+    except Exception as e:
+        print(e)
+        print("3秒超时")
+        driver.execute_script("window.stop()")
+    print("最多5秒")
+    driver.set_page_load_timeout(5) #可修改 越大等待时间越长
     for c1 in c:
         driver.add_cookie(c1)
-        print("成功添加",c1)
-    driver.get(url_asin)
-    driver.set_page_load_timeout(10)
-    driver.set_script_timeout(10)
-    print("缓存==",driver.get_cookies())
     try:
+        driver.get(url_asin)
+    except Exception as e:
+        print(e)
+        print("5秒超时")
+        driver.execute_script("window.stop()")
+    try:
+        print("打算点击卖家信息")
+        driver.set_page_load_timeout(60)#这个不要修改
+        print("更新超时时间60")
         html = driver.page_source
         html2 = etree.HTML(html)
         coms = html2.xpath("//*[@id='sellerProfileTriggerId']")
         if len(coms) > 0:
             d = driver.find_element(By.XPATH, "//*[@id='sellerProfileTriggerId']")
             d.click()
+            print("成功点击卖家信息")
             html3 = driver.page_source
             html4 = etree.HTML(html3)
             cs = html4.xpath("//*[@id='page-section-detail-seller-info']/div/div/div/div[*]/span")
@@ -54,21 +93,31 @@ def find_company(url_page, url_asin,c):
             n = 0
             address = []
             for s in cs:
-                if "Business Address" in s.text.strip() and n == 0:
+                print("s==",s.text.strip())
+                if "Business Name" in s.text.strip():
+                    print("跳过 Business Name")
+                    n=1
+                elif "Business Address" in s.text.strip():
+                    print("跳过 Business Address")
+                    n=2
+                elif n==1:
                     ls_s.append(s.text.strip())
-                    n = n + 1
-                elif n == 0:
-                    ls_s.append(s.text.strip())
-                else:
+                elif n==2:
                     address.append(s.text.strip())
-            ad_s = " ".join(address)
-            ls_s.append(ad_s)
-            ls_s.append(url_page.strip())
+            str_address=" ".join(address)
+            ls_s.append(str_address)
+            ls_s.append(url_asin)
+            ls_s.append(url_page)
             try:
-                wt_csv(ls_s)
-                print("成功保存:", ls_s)
+                if ls_s[0]=="":
+                    print("不保存")
+                else:
+                    wt_csv(ls_s)
+                    print("成功保存:", ls_s)
             except Exception as e:
                 print("保存失败:", e)
+        else:
+            print("没发现卖家信息")
     except Exception as e:
         driver.close()
         driver.quit()
@@ -81,7 +130,16 @@ def find_html(url_html, page):
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.common.by import By
     driver = find_driver()
-    driver.get(url_html)
+    #driver.get(url_html)
+
+    driver.set_page_load_timeout(10)
+    print("最多3秒")
+    try:
+        driver.get(url_html)
+    except Exception as e:
+        print(e)
+        print("3秒超时")
+        driver.execute_script("window.stop()")
     # 调出输入框
     try:
         button1 = driver.find_element(by=By.XPATH, value="//*[@id='glow-ingress-block']")
@@ -100,7 +158,7 @@ def find_html(url_html, page):
     element.send_keys("10041")
     # 点击发送
     button2 = driver.find_element(by=By.XPATH, value="//*[@id='GLUXZipUpdate']/span/input")
-    WebDriverWait(driver, 10, 0.2).until(lambda driver1: button2.is_displayed())  # 显式等待
+    WebDriverWait(driver, 10, 0.2).until(lambda driver: button2.is_displayed())  # 显式等待
     button2.click()
     time.sleep(0.5)
     print("一次刷新")
@@ -195,12 +253,12 @@ def find_html(url_html, page):
     print("开始关闭浏览器")
     c=driver.get_cookies()
     print("c==",c)
+
     driver.close()
     driver.quit()
     print("成功关闭浏览器")
     html2 = etree.HTML(html)
     return html, html2,c
-
 
 def find_asins_next_page(url_page):
     n = 0
@@ -225,7 +283,7 @@ def find_asins_next_page(url_page):
         for i in xp_asins:
             if len(i) > 3:
                 asin_ls.append(i)
-        xp_page = html2.xpath("//*[@class='s-pagination-strip']/a/@href")
+        xp_page = html2.xpath("//*[@class='s-pagination-strip']/a/@href")   
         if not xp_page:
             xp_page = html2.xpath("//*[@class='a-last']/a/@href")
         print("xp_page:", xp_page)
@@ -236,7 +294,7 @@ def find_asins_next_page(url_page):
                 print("成功采集下一页")
                 break
         except EncodingWarning as e:
-            print("e")
+            print("e",e)
             next_page_in = ""
     return asin_ls, next_page_in,c
 
@@ -249,7 +307,7 @@ def wt_csv(data):
 
 def find_path():
     # 设置文件保存路径
-    path = r"C:\Users\Administrator\Desktop\1\探照灯.csv"
+    path = r"E:\亚马逊采集器\探照灯.csv"
     return path
 
 
@@ -257,8 +315,12 @@ if __name__ == '__main__':
     import re
 
     # 文件保存路径
+    head=["名称","地址","商品网址","商品所在页面"]
+    with open(find_path(), "w", newline="", encoding="utf-8-sig") as f:
+        wt=csv.writer(f)
+        wt.writerow(head)
+
     page_url = "https://www.amazon.com/s?k=toy&i=toys-and-games&crid=123IE79BS52KF&sprefix=to%2Ctoys-and-games%2C650&ref=nb_sb_noss_2 "
-    #page_url = "https://www.amazon.com/s?k=toy&i=toys-and-games&page=10&crid=123IE79BS52KF&qid=1656001824&sprefix=to%2Ctoys-and-games%2C650&ref=sr_pg_9"
     ls_page = []
     pg = []
     while True:
