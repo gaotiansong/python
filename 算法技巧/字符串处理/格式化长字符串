@@ -1,0 +1,19 @@
+s=r"Business seller,Business Name:,Hai men shi ku ke dian zi shang wu you xian gong si,Business Type:,Privately-owned business,Trade Register Number:,91320684MA1WW7YP2R,VAT Number:,DE319423154,Business Address:,hai men jie dao jian kang lu 194 hao,hai men shi,nan tong shi,jiang su,226100,CN"
+ls_s=s.split(",")
+
+#print("ls_s==",ls_s,len(ls_s))
+
+def change_data(ls_s):
+    #传入一个列表 输出一个处理后的列表
+    str_split=[]
+    new_list=[]
+    for i in range(len(ls_s)):
+        if r":" in ls_s[i]:
+            str_split.append(i)
+
+    for i in range(len(str_split)):
+        if len(str_split)==i+1:
+            new_list.append(ls_s[str_split[i]:])
+        else:
+            new_list.append(ls_s[str_split[i]:str_split[i+1]])
+    return new_list
