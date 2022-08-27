@@ -3,7 +3,7 @@ from lxml import etree
 import re
 
 def get_ip():
-    url="http://api2.xkdaili.com/tools/XApi.ashx?apikey=XK0F329BE981ECF21718&qty=1&format=json&split=0&sign=fecf58a89e3e2c2ccb56e7d5a02a5757"
+    url=""
     reg=requests.get(url)
     s=reg.text
     ip=eval(s)["data"][0]["ip"]
